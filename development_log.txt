@@ -1,0 +1,122 @@
+11/21/2020:
+1. Added feature that upsample diffraction pattern for APS data
+2. Allow user to crop/pad initial probe if its size is different from diffraction pattern.
+By default, interpolation is used in this case. crop/pad is useful when diffraction pattern is upsampled/binned.
+Example script: ptycho_bnp_20c3.m
+p.detector.upsampling = 1; 
+p.crop_pad_init_probe = true; 
+
+11/22/2020:
+1. Allow user to use imresize to upsample diffraction pattern for APS data
+Example script: ptycho_bnp_20c3.m
+p.detector.upsampling_method = 'bicubic';  % Added by YJ. use imresize function to upsample diffraction pattern. Method can be 'bilinear' or 'bicubic'
+2. Modified print message format during initialization to be more consistent
+
+11/23/2020:
+1. Added a make_circular_mask.m function to +utils
+2. Added a p.detector.circ_mask option to apply a circular mask to diffraction patterns.
+Example script: ptycho_lamni_2020c2_FSC.m
+p.   detector.circ_mask = 128; % Added by YJ. Apply a circular mask with specified radius (in pixels) to diffraction patterns. Useful for resolution study.
+3. Added a new output (par.object_size_orig) in tomo/+prepare/load_projections_aps.m to keep track the original size of ptycho reconstructions
+Can be useful for making mask functions for projections w. differernt FOV
+Example script: tomo_bnp_19c3_Lin_smallFOV2.m
+
+11/24/2020:
+Added some regularization (TV) steps after FBP reconstruction
+Example script: tomo_bnp_19c3_Lin_smallFOV2.m
+
+11/25/2020:
+Added eng.save_sub_objects_N option to limit the size of save sub-objects. Only useful when eng.save_sub_objects = true;
+Example script: ptycho_velo_19c2_XBIC_CIGS.m
+
+12/28-30/2020:
+Begin to integrate ZC's LSQ-ML-multislice code to main package, as a new engine: +GPU_MS
+Changed import folder from 'GPU' to 'GPU_MS'
+example script: ptycho_velo_19c2_LCO_tomo_MS.m
+
+Checked files:
++core/+analysis/plot_positions.m
++analysis/
+plot_results.m
+plot_geom_corrections.m
+
++LSQML
+get_forward_model.m
+update_object.m
+refine_object_update.m
+get_optimal_LSQ_step.m
+
+LSQML.m:
+line 161: sumsq_cell - my change
+line 281: fix amplitude - not needed
+ptycho_solver.m:
+line 349: why ll = 1:par.object_modes not Nlayer? - bug
+todo: output code
+ptycho_solver.m
+todo: allow user to specify Obj_size_limit
+
++initialize/
+check_inputs.m
+get_defaults.m
+get_parallel_blocks.m
+init_solver.m:
+line 221: Nmodes is the # probe modes???
+line 298: todo: make the style more consistent
+load_from_p.m
+save_to_p.m
++initialize/private/distmat.m
++initialize/private/get_close_indices.m
++initialize/private/get_nonoverlapping_indices.m
++initialize/private/get_scanning_indices.m
+
++shared/
+apply_probe_contraints.m
+back_fourier_proj.m
+find_geom_correction.m
+find_reconstruction_ROI.m
+fwd_fourier_proj.m
+get_object_extent.m
+get_views.m
+is_method.m
+ortho_modes.m
+ortho_modes_eig.m
+
+private/
+accelerate_gradients.m
+get_fourier_error.m
+get_img_grad.m
+get_reciprocal_model.m
+gradient_position_solver.m
+gradient_projection_solver.m - line 124, convergence check disabled?
+modulus_constraint.m
+regulation_multilayers.m
+remove_object_ambiguity.m
+remove_variable_probe_ambiguities.m
+
+Modifications to ZC's multislice GPU code:
+1. New reconstruction parameters (delta_z, rmvac, layer4pos) are now speficied in the eng parameter instead of p parameter.
+2. Output matlab file is now consistent with YJ's GPU engine in ptycho_solver.m
+3. do we really need this switch?
+
+01/03/2021:
+Modified tomo/+prepare/load_projections_aps.m to automatically sum over 
+layers into a single projection when loading multi-slice ptycho reconstructions
+
+01/05/2021:
+1. Added eng. init_layers_same option to GPU_MS. If true, initialize all layers with the same (averaged) input object function.
+Not sure this is really useful...
+example script: ptycho_velo_19c2_LCO_tomo_MS_Ndp128.m
+2. Changed password of public gmail account to: sit_down_reiner
+
+01/07/2021:
+Fixed a bug in +GPU_MS/+initialize/init_solver.m:
+Probe initialization should be probe = cell(1,par.probe_modes) instead of probe = cell(par.probe_modes,1), which will cause error when momentum acceleration is used.
+
+
+
+TODO
+A-path fly scan
+LSQ-ML-multislice:
+Momentum acceleration for MLc does not work
+Add feature to allow multiple scans.
+Add feature to save sub objects for machine learning
