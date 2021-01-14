@@ -71,7 +71,6 @@ else
         verbose(2,'Loading object %d from: %s',ii,p.initial_iterate_object_file{ii})
         S = io.load_ptycho_recons(p.initial_iterate_object_file{ii});
         object = double(S.object);
-        
         % reinterpolate to the right pixel size 
         if isfield(S, 'p') && any(S.p.dx_spec ~= p.dx_spec)
             verbose(2, 'Warning: Reinterpolate loaded object to new pixels size')
@@ -91,17 +90,23 @@ else
             % to p.object
             p.object{ii} = object;
         end
-
+        
         % now let's check the object modes
         mode_diff = p.object_modes-size(object,3);
         if mode_diff > 0
             % add (random) object modes
             p.object{ii}(:,:,size(object,3)+1:p.object_modes,:) = (1+1i*1e-6*rand([p.object_size(ii,:) mode_diff])).*ones([p.object_size(ii,:) mode_diff]);
         elseif mode_diff < 0
-            % remove object modes
-            p.object{ii}(:,:,p.object_modes+1:size(object,3),:) = [];
+            % modified by YJ. keep all layers for multi-layer object
+            if isfield(p,'multiple_layers_obj') && p.multiple_layers_obj
+                %add an extra axis that is needed by GPU_MS
+                object_temp(:,:,1,:) = p.object{ii}; 
+                p.object{ii} = object_temp;
+            else
+                % remove object modes
+                p.object{ii}(:,:,p.object_modes+1:size(object,3),:) = [];
+            end
         end
-
     end
 end
 
