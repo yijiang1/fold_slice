@@ -1,0 +1,25 @@
+#! /bin/bash
+
+path=$1
+
+if [ -r $path ]
+then
+  echo 1
+else
+  echo 0
+fi
+
+if [ -w $path ]
+then
+  echo 1
+else
+  echo 0
+fi
+
+if [ -x $path ]
+then
+  echo 1
+else
+  echo 0
+fi
+
