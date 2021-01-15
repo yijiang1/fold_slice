@@ -13,21 +13,18 @@
 % ++ param       structure containing parameters for the engines 
 
 function [self, param, p] = load_from_p(param, p)
-
     import math.*
     import utils.*
     import engines.GPU_MS.shared.*
     
-    
     [Np_p(1),Np_p(2),Npos] = size( p.fmag);
     self.reconstruct_ind = p.scanidxs;
 
-    
     %% load default variables with different name from the main ptycho code 
     param.Nmodes = p.probe_modes; 
     param.plot_results_every = p.plot.interval; 
     
-     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% additional features added by YJ
     %for output intermediated results, 
     param.fout = p.fout;    
@@ -65,7 +62,17 @@ function [self, param, p] = load_from_p(param, p)
     if isfield(p, 'TV_lambda')
         param.TV_lambda = p.TV_lambda;         
     end
-
+    
+    if isfield(p,'avg_photon_threshold') && p.avg_photon_threshold>=0
+        avg_photon_threshold = p.avg_photon_threshold;
+    else %default
+        if isfield(param,'beam_source') && strcmp(param.beam_source,'electron')
+            avg_photon_threshold = 0.0001;
+        else
+            avg_photon_threshold = 0.01;
+        end
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%
     % if defined in p, use from p otherwise use defaults in param 
     try;param.object_regular = p.reg_mu; end
@@ -80,7 +87,6 @@ function [self, param, p] = load_from_p(param, p)
         param.background_width = param.background_width / 2^p.binning;
     end
 
-        
     %% load variables from the main ptycho code and merge it with the defaults 
     for field = fieldnames(param)'
         field = field{1}; 
@@ -180,8 +186,6 @@ function [self, param, p] = load_from_p(param, p)
         end
     end
     
-    %disp(size(self.probe))
-
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% prepare support contraints%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -239,7 +243,7 @@ function [self, param, p] = load_from_p(param, p)
     end
     
     verbose(1, 'Load and pad object and probe')
-    % update current size of the object 
+    % update current size of the object
     for i = 1:length(p.object)
         for j = 1:size(p.object{i},4) % load multiple layers of the object 
             self.object{i,j} = p.object{i}(:,:,1,j);
@@ -322,8 +326,9 @@ function [self, param, p] = load_from_p(param, p)
         self.diffraction(mask_ind) = self.diffraction(min(mask_ind+1, numel(self.diffraction))); 
     end
 
-    if any(sum(sum(self.diffraction)) / prod(p.asize) < 0.0001) % modified by ZC. relax from 0.01 to 0.0001 for low-dose
-        error('%i patterns has average photon count < 0.0001', mean(sum(sum(self.diffraction)) / prod(p.asize) < 0.0001))
+    low_photon_count_dp = sum(sum(self.diffraction)) / prod(p.asize) < avg_photon_threshold;
+    if any(low_photon_count_dp)
+        error('%0.2f%% diffraction patterns has average photon count < %f', sum(low_photon_count_dp)/size(self.diffraction,3)*100, avg_photon_threshold)
     end
     
     %% automatic data centering / flipping / tilted plane correction 

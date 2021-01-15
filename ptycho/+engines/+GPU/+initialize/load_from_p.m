@@ -68,6 +68,15 @@ function [self, param, p] = load_from_p(param, p)
         param.TV_lambda = p.TV_lambda;         
     end
     
+    if isfield(p,'avg_photon_threshold') && p.avg_photon_threshold>=0
+        avg_photon_threshold = p.avg_photon_threshold;
+    else %default
+        if isfield(param,'beam_source') && strcmp(param.beam_source,'electron')
+            avg_photon_threshold = 0.0001;
+        else
+            avg_photon_threshold = 0.01;
+        end
+    end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%
@@ -315,8 +324,9 @@ function [self, param, p] = load_from_p(param, p)
         self.diffraction(mask_ind) = self.diffraction(min(mask_ind+1, numel(self.diffraction))); 
     end
     
-    if any(sum(sum(self.diffraction)) / prod(p.asize) < 0.01)
-        error('%i patterns has average photon count < 0.01', mean(sum(sum(self.diffraction)) / prod(p.asize) < 0.01))
+    low_photon_count_dp = sum(sum(self.diffraction)) / prod(p.asize) < avg_photon_threshold;
+    if any(low_photon_count_dp)
+        error('%0.2f%% diffraction patterns has average photon count < %f', sum(low_photon_count_dp)/size(self.diffraction,3)*100, avg_photon_threshold)
     end
     
     %% automatic data centering / flipping / tilted plane correction 

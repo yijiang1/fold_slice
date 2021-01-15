@@ -335,6 +335,8 @@ eng.save_results_every = Niter_save_results;
 eng.save_phase_image = true;
 eng.save_probe_mag = true;
 eng.save_sub_objects = false;
+eng.avg_photon_threshold = 0; %Added by YJ. Check averaged photon count per pixel during pre-processing. Stop if smaller than the threshold (default = 0.01);
+
 resultDir = p.base_path;
 eng.fout =  generateResultDir(eng, resultDir);
 [eng.fout, p.suffix] =  generateResultDir(eng, resultDir);
