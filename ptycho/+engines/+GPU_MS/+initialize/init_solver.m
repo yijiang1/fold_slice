@@ -424,6 +424,21 @@ function [self, cache] = init_solver(self,par)
     
     
     %% multilayer extension 
+    % first choose specific layers from initial object
+    N_layer_input_obj = size(self.object,2);
+    if isfield(par,'init_layer_num')
+        par.init_layer_num(par.init_layer_num<0) = [];
+        par.init_layer_num(par.init_layer_num>N_layer_input_obj) = [];
+        if ~isempty(par.init_layer_num)
+            object_temp = cell(size(self.object,1),length(par.init_layer_num));
+            for ll = 1:par.Nscans
+                for jj=1:length(par.init_layer_num)
+                    object_temp{ll,jj} = self.object{ll,par.init_layer_num(jj)};
+                end
+            end
+            self.object = object_temp;
+        end
+    end
     % if object has only a single layer, expand it to multiple using
     % unwrapping 
     if size(self.object,2) > par.Nlayers
@@ -432,15 +447,22 @@ function [self, cache] = init_solver(self,par)
         end
         self.object(:,2:end) = [];
     end
-    
+
     if size(self.object,2) < par.Nlayers
         N_add = par.Nlayers - size(self.object,2); 
-        for ll = 1:size(self.object,1)
+        for ll = 1:size(self.object,1) %loop over scans
             obj{ll} = self.object(ll,:);
-            %added by YJ. initialize all layers with the input object
-            if isfield(par, 'init_layers_same') && par.init_layers_same
-                for ii = 1:N_add
-                    obj{ll}{end+1} = obj{ll}{1};
+            %added by YJ. initialize layers
+            if isfield(par, 'init_layer_mode') 
+                switch par.init_layer_mode
+                    case 'avg'
+                        obj_avg = prod(cat(3,self.object{ll,:}),3); 
+                        obj_avg = abs(obj_avg).*exp(1i*phase_unwrap(angle(obj_avg))/size(self.object,2));
+                        for ii = 1:par.Nlayers
+                            obj{ll}{ii} = obj_avg;
+                        end
+                    case 'all'
+                        
                 end
             else 
                 for ii = 1:N_add
@@ -455,8 +477,8 @@ function [self, cache] = init_solver(self,par)
         end
         self.object = cat(1, obj{:});
     end
-
-    % if object has more layers but only one is needed 
+    
+    % if object has more layers but only one is needed
     if size(self.object,2) > 1 && par.Nlayers == 1
        for ll = 1:par.Nscans
            object{ll,1} = prod(cat(3,self.object{ll,:}),3); 
@@ -464,9 +486,8 @@ function [self, cache] = init_solver(self,par)
        self.object = object; 
     end
 
-    
     for j = 1:par.Nlayers  % add extra layers 
-        for i = 1:max(1, par.Nscans * ~par.share_object)
+        for i = 1:max(1, par.Nscans * ~par.share_object) % loop over scans
             try
                 object{i,j} = self.object{min(end,i),j};
                 object{i,j}(1);
@@ -483,7 +504,6 @@ function [self, cache] = init_solver(self,par)
         end
     end
     
-    
     for i = 1:numel(object)
         object{i} = single(object{i});
         object{i} =  complex(object{i});
@@ -492,9 +512,8 @@ function [self, cache] = init_solver(self,par)
         probe{i} = single(probe{i});
         probe{i}  = complex(probe{i});
     end
-   
     
-    %% STORE RESULTS TO SELF CLASS 
+    %% STORE RESULTS TO SELF CLASS
     self.object = object; 
     self.probe = probe; 
     self.modes = modes; 
