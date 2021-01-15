@@ -86,8 +86,11 @@ function [param] = get_defaults
     param.preshift_ML_probe = true; % multilayer ptycho extension: if true, assume that the provided probe is reconstructed in center of the sample. 
     param.rmvac = true;             % Added by ZC. exclude vaccum layer during object update
     param.layer4pos = [];             % Added by ZC. speficy which layer is used for position correction 
-    param.init_layers_same = false;     % Added by YJ. If true, initialize all layers with the (averaged) input object function
-
+    param. init_layer_mode = 'all';      % Added by YJ. Specify how to initialize object layers. 
+                                       % 'all': use every layers from the initial object file
+                                       % 'avg': initialize layers w. an averaged layer from the initial object file 
+    param. init_layer_num = [];          % Added by YJ. Specify which layers in the inital object are used. If empty (default), use all layers.
+   
     param. initial_probe_rescaling = true;  % find the optimal scaling correction for the provided probe guess in the initial iteration 
     param. accelerated_gradients_start = inf;  % use accelerated gradients to speed up the convergence
     param. align_shared_objects = false;      % align multiple objects from various scans 
