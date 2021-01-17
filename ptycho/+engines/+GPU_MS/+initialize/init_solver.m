@@ -16,6 +16,8 @@ function [self, cache] = init_solver(self,par)
     import utils.*
     import plotting.*
     import engines.GPU_MS.GPU_wrapper.*
+    
+    verbose(struct('prefix','GPU/CPU_MS-engine-init'))
 
     par.Nscans = length(self.reconstruct_ind); %number of scans
     cache.skip_ind = setdiff(1:self.Npos,[self.reconstruct_ind{:}]); %  wrong datasets  to skip 
@@ -422,60 +424,81 @@ function [self, cache] = init_solver(self,par)
         illum_sum_0{ll} = Ggather(set_views(Gzeros(self.Np_o), Garray(aprobe2), 1,1, ind, cache));
     end
     
-    
     %% multilayer extension 
-    % first choose specific layers from initial object
+    % Step 1: choose specific layers from initial object file
     N_layer_input_obj = size(self.object,2);
-    if isfield(par,'init_layer_num')
-        par.init_layer_num(par.init_layer_num<0) = [];
-        par.init_layer_num(par.init_layer_num>N_layer_input_obj) = [];
-        if ~isempty(par.init_layer_num)
-            object_temp = cell(size(self.object,1),length(par.init_layer_num));
+    par.init_layer_select(par.init_layer_select<0) = [];
+    par.init_layer_select(par.init_layer_select>N_layer_input_obj) = [];
+    if ~isempty(par.init_layer_select)
+        object_temp = cell(size(self.object,1),length(par.init_layer_select));
+        for ll = 1:par.Nscans
+            for jj=1:length(par.init_layer_select)
+                object_temp{ll,jj} = self.object{ll,par.init_layer_select(jj)};
+            end
+        end
+        self.object = object_temp;
+    end
+    
+    % Step 2: pre-process layers
+    switch par.init_layer_preprocess
+        case 'avg' % only use the averaged layer
+            verbose(0,'Average initial layers')
             for ll = 1:par.Nscans
-                for jj=1:length(par.init_layer_num)
-                    object_temp{ll,jj} = self.object{ll,par.init_layer_num(jj)};
+                obj_avg = prod(cat(3,self.object{ll,:}),3); 
+                obj_avg = abs(obj_avg).*exp(1i*phase_unwrap(angle(obj_avg))/size(self.object,2));
+                for jj=1:size(self.object,2)
+                    self.object{ll,jj} = obj_avg;
                 end
             end
-            self.object = object_temp;
-        end
+        case 'interp' % interpolate layers 
+            verbose(0,'Interpolate initial layers')
+            %TODO
+        case {'','all'} % default: keep all layers
+            % nothing to do
+        otherwise
+            error('Invalid init_layer_preprocess!')
     end
-    % if object has only a single layer, expand it to multiple using
-    % unwrapping 
+    
+    % Step 3: add or remove layers based on par.Nlayers
     if size(self.object,2) > par.Nlayers
+        warning('Initial object has more layers than Nlayers')
         for ll = 1:par.Nscans
             self.object{ll,1} = prod(cat(3,self.object{ll,:}),3); 
         end
         self.object(:,2:end) = [];
     end
-
+    
     if size(self.object,2) < par.Nlayers
-        N_add = par.Nlayers - size(self.object,2); 
+        verbose(0,'Initialize extra layers')
+        N_add = par.Nlayers - size(self.object,2);
         for ll = 1:size(self.object,1) %loop over scans
             obj{ll} = self.object(ll,:);
             %added by YJ. initialize layers
-            if isfield(par, 'init_layer_mode') 
-                switch par.init_layer_mode
-                    case 'avg'
-                        obj_avg = prod(cat(3,self.object{ll,:}),3); 
-                        obj_avg = abs(obj_avg).*exp(1i*phase_unwrap(angle(obj_avg))/size(self.object,2));
-                        for ii = 1:par.Nlayers
-                            obj{ll}{ii} = obj_avg;
-                        end
-                    case 'all'
-                        
-                end
-            else 
-                for ii = 1:N_add
-                    if mod(ii, 2) == 1
-                        obj{ll}{end+1} = ones(self.Np_o, 'single') + 1e-9i*randn(self.Np_o, 'single'); % add empty slice at the end 
-                    else
-                        obj{ll}(2:end+1) = obj{ll}; 
-                        obj{ll}{1} = ones(self.Np_o, 'single') + 1e-9i*randn(self.Np_o, 'single'); % add empty slice at the beginning 
-                    end
+            switch par.init_layer_append_mode
+                case 'avg' %Not sure when this is useful, but I'll keep it for now
+                    obj_pre = prod(cat(3,self.object{ll,:}),3); 
+                    obj_pre = abs(obj_pre).*exp(1i*phase_unwrap(angle(obj_pre))/size(self.object,2));
+                    obj_post = obj_pre;
+                case 'edge'
+                    obj_pre = self.object{ll,1};
+                    obj_post = self.object{ll,end};
+                case {'','vac'}
+                    %obj_pre = ones(self.Np_o, 'single') + 1e-9i*randn(self.Np_o, 'single');
+                    obj_pre = ones(self.Np_o, 'single');
+                    obj_post = obj_pre;
+                otherwise
+                    error('Invalid init_layer_append_mode!')
+            end
+            for ii = 1:N_add
+                if mod(ii, 2) == 1
+                    obj{ll}{end+1} = obj_post; % add slice at the end 
+                else
+                    obj{ll}(2:end+1) = obj{ll};
+                    obj{ll}{1} = obj_pre; % add slice at the beginning 
                 end
             end
         end
-        self.object = cat(1, obj{:});
+        self.object = cat(1, obj{:}); %combine all scans
     end
     
     % if object has more layers but only one is needed
@@ -486,21 +509,32 @@ function [self, cache] = init_solver(self,par)
        self.object = object; 
     end
 
-    for j = 1:par.Nlayers  % add extra layers 
+    % At this point: size(self.object,3) should equal to par.Nlayers
+    %{ 
+    %% MO's code, should be useless now. I'll keep it for now in case of
+    bugs in steps 1-3. 
+    for j = 1:par.Nlayers  
         for i = 1:max(1, par.Nscans * ~par.share_object) % loop over scans
             try
                 object{i,j} = self.object{min(end,i),j};
                 object{i,j}(1);
             catch
-                disp('transparent slice')
+                verbose(0, 'add transparent slice') % add extra layers 
                 %% add fully transparent slice at the end 
                 object{i,j} = ones(self.Np_o, 'single');
                 if size(self.object,2) == 1
                     % swap order of the new layers to keep the original
-                    % reconstruction in center 
+                    % reconstruction in center
                     object(i,:) = object(i,end:-1:1); 
                 end
             end
+        end
+    end
+    %}
+    % Step 4: assign self.object to object and rescale layers if needed
+    for j = 1:par.Nlayers  
+        for i = 1:max(1, par.Nscans * ~par.share_object) % loop over scans
+            object{i,j} = self.object{min(end,i),j}*par.init_layer_scaling_factor;
         end
     end
     
@@ -508,6 +542,7 @@ function [self, cache] = init_solver(self,par)
         object{i} = single(object{i});
         object{i} =  complex(object{i});
     end
+
     for i = 1:numel(probe)
         probe{i} = single(probe{i});
         probe{i}  = complex(probe{i});
