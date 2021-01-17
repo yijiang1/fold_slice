@@ -626,7 +626,25 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         p.detector.binning = false;
         p.dx_spec = self.pixel_size;
         p.lambda = self.lambda;
-        %save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','fourier_error_out','avgTimePerIter');
+        
+        % store parameters related to multi-slice
+        p.multi_slice_param.z_distance  = self.z_distance;
+        p.multi_slice_param.regularize_layers = par.regularize_layers;
+        p.multi_slice_param.preshift_ML_probe = par.preshift_ML_probe;
+        p.multi_slice_param.rmvac = par.rmvac;
+        p.multi_slice_param.layer4pos = par.layer4pos;
+        
+        % store parameters for object initialization
+        p.obj_init_param.init_layer_select = par.init_layer_select;
+        p.obj_init_param.init_layer_preprocess = par.init_layer_preprocess;
+        p.obj_init_param.init_layer_append_mode = par.init_layer_append_mode;
+        p.obj_init_param.init_layer_scaling_factor = par.init_layer_scaling_factor;
+        if ~isempty(par.p.initial_iterate_object_file) % if initial object is from a given file
+        	p.obj_init_param.init_object_file = par.p.initial_iterate_object_file;
+            if isfield(par.p,'multiple_layers_obj')
+                p.obj_init_param.multiple_layers_obj = par.p.multiple_layers_obj;
+            end
+        end
         
         save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object_roi','object');
         %% save object phase
