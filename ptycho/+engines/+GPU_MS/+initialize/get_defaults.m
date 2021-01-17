@@ -86,11 +86,17 @@ function [param] = get_defaults
     param.preshift_ML_probe = true; % multilayer ptycho extension: if true, assume that the provided probe is reconstructed in center of the sample. 
     param.rmvac = true;             % Added by ZC. exclude vaccum layer during object update
     param.layer4pos = [];             % Added by ZC. speficy which layer is used for position correction 
-    param. init_layer_mode = 'all';      % Added by YJ. Specify how to initialize object layers. 
-                                       % 'all': use every layers from the initial object file
-                                       % 'avg': initialize layers w. an averaged layer from the initial object file 
-    param. init_layer_num = [];          % Added by YJ. Specify which layers in the inital object are used. If empty (default), use all layers.
-   
+    param. init_layer_select = [];       % Added by YJ. Select layers in the inital object for pre-processing If empty (default): use all layers.
+    param. init_layer_preprocess = '';   % Added by YJ. Specify how to pre-process initial layers
+                                       % '' or 'all' (default): use all layers (do nothing)
+                                       % 'avg': average all layers 
+                                       % 'interp': interpolate layers. TODO
+    param. init_layer_append_mode = '';  % Added by YJ. Specify how to initialize extra layers
+                                       % '' or 'vac' (default): add vacuum layers
+                                       % 'edge': append 1st or last layers
+                                       % 'avg': append averaged layer
+    param. init_layer_scaling_factor = 1;  % Added by YJ. Scale all layers. Default: 1 (no scaling). Useful when delta_z is changed
+
     param. initial_probe_rescaling = true;  % find the optimal scaling correction for the provided probe guess in the initial iteration 
     param. accelerated_gradients_start = inf;  % use accelerated gradients to speed up the convergence
     param. align_shared_objects = false;      % align multiple objects from various scans 
