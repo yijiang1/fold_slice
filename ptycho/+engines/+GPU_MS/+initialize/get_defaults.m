@@ -86,7 +86,7 @@ function [param] = get_defaults
     param.preshift_ML_probe = true; % multilayer ptycho extension: if true, assume that the provided probe is reconstructed in center of the sample. 
     param.rmvac = true;             % Added by ZC. exclude vaccum layer during object update
     param.layer4pos = [];             % Added by ZC. speficy which layer is used for position correction 
-    param. init_layer_select = [];       % Added by YJ. Select layers in the inital object for pre-processing If empty (default): use all layers.
+    param. init_layer_select = [];       % Added by YJ. Select layers in the initial object for pre-processing If empty (default): use all layers.
     param. init_layer_preprocess = '';   % Added by YJ. Specify how to pre-process initial layers
                                        % '' or 'all' (default): use all layers (do nothing)
                                        % 'avg': average all layers 
