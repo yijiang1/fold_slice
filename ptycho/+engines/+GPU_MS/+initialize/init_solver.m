@@ -180,7 +180,6 @@ function [self, cache] = init_solver(self,par)
         Diffraction = sqrt(single(max(0,Diffraction))); % diffraction is amplitude, comment by ZC
     end
 
-    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% write back the data arrays 
     self.diffraction = Diffraction; % diffraction is amplitude, comment by ZC
@@ -318,7 +317,10 @@ function [self, cache] = init_solver(self,par)
 
         if ~isinf(modes{i}.distances(end)) % Forward Fresnel propagator in k-space, ASM, commented by ZC
             %% near field factor            
-            ASM =  exp( modes{i}.distances(end)* cache.ASM_difference);
+            %ASM =  exp( modes{i}.distances(end)* cache.ASM_difference);
+            % modified by YJ: use H instead of dH (which is an approximation)
+            [~,ASM,~,~] = near_field_evolution(ones(self.Np_p), modes{i}.distances(end), self.lambda,  self.pixel_size .*self.Np_p, true );
+            ASM = fftshift(ASM);
             modes{i}.ASM_factor = ASM;
             modes{i}.cASM_factor = conj(ASM);
         end
