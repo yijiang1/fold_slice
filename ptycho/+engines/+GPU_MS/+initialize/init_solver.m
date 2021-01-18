@@ -193,8 +193,8 @@ function [self, cache] = init_solver(self,par)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % precalculate ASM factor for propagation distance recovery 
-    [ASM] = near_field_evolution_gradient(self.Np_p, self.lambda,  self.pixel_size .*self.Np_p );
-    cache.ASM_difference = fftshift(ASM);
+    [ASM_difference] = near_field_evolution_gradient(self.Np_p, self.lambda,  self.pixel_size .*self.Np_p );
+    cache.ASM_difference = fftshift(ASM_difference);
     
     % custom propagator to account for tilted plane sample
     if any(par.p.sample_rotation_angles(1:2)) && check_option(par.p, 'apply_tilted_plane_correction', 'propagation') 
