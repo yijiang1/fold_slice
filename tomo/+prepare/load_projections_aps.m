@@ -183,14 +183,12 @@ for num=1:num_proj
     
     %% for multislice recon - sum layers into a single projection
     if size(object,3)>1
-       object_temp = ones(size(object,1),size(object,2));
-       for i=1:size(object,3)
-           object_temp = object_temp.*object(:,:,i);
-       end
-       object = object_temp;
-        clear object_temp
+        if isfield(par.MLrecon,'select_layers') && any(par.MLrecon.select_layers)
+            object = prod(object(:,:,par.MLrecon.select_layers),3);
+        else
+            object = prod(object,3);
+        end
     end
-    
     
     %%
     object_size_orig(:,num) = size(object);
