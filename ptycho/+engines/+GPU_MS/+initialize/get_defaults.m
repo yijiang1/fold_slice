@@ -55,8 +55,8 @@ function [param] = get_defaults
     
     param.object_regular =  [0, 0]; %  enforce smoothness !!!, use between [0-0.1 ]
     param.remove_object_ambiguity = true;    % remove intensity ambiguity between the object and the probes 
-    param. variable_probe = false;           % Use SVD to account for variable illumination during a single (coupled) scan
-    param. apply_subpix_shift = false;       % apply FFT-based subpixel shift, important for good position refinement but it is slow
+    param.variable_probe = false;           % Use SVD to account for variable illumination during a single (coupled) scan
+    param.apply_subpix_shift = false;       % apply FFT-based subpixel shift, important for good position refinement but it is slow
 
     param.probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % list of free parameters in the geometry model
     param.probe_position_search = inf;
@@ -86,24 +86,25 @@ function [param] = get_defaults
     param.preshift_ML_probe = true; % multilayer ptycho extension: if true, assume that the provided probe is reconstructed in center of the sample. 
     param.rmvac = true;             % Added by ZC. exclude vaccum layer during object update
     param.layer4pos = [];             % Added by ZC. speficy which layer is used for position correction 
-    param. init_layer_select = [];       % Added by YJ. Select layers in the initial object for pre-processing If empty (default): use all layers.
-    param. init_layer_preprocess = '';   % Added by YJ. Specify how to pre-process initial layers
+    param.init_layer_select = [];       % Added by YJ. Select layers in the initial object for pre-processing If empty (default): use all layers.
+    param.init_layer_preprocess = '';   % Added by YJ. Specify how to pre-process initial layers
                                        % '' or 'all' (default): use all layers (do nothing)
                                        % 'avg': average all layers 
-                                       % 'interp': interpolate layers. TODO
-    param. init_layer_append_mode = '';  % Added by YJ. Specify how to initialize extra layers
+                                       % 'interp': interpolate layers using spline method. Need to specify desired depths in init_layer_interp
+    param.init_layer_interp = [];     % Specify desired depths for interpolation. The depths of initial are [1:Nlayer_init]. If empty (default), no interpolation                    
+    param.init_layer_append_mode = '';  % Added by YJ. Specify how to initialize extra layers
                                        % '' or 'vac' (default): add vacuum layers
                                        % 'edge': append 1st or last layers
                                        % 'avg': append averaged layer
-    param. init_layer_scaling_factor = 1;  % Added by YJ. Scale all layers. Default: 1 (no scaling). Useful when delta_z is changed
+    param.init_layer_scaling_factor = 1;  % Added by YJ. Scale all layers. Default: 1 (no scaling). Useful when delta_z is changed
 
-    param. initial_probe_rescaling = true;  % find the optimal scaling correction for the provided probe guess in the initial iteration 
-    param. accelerated_gradients_start = inf;  % use accelerated gradients to speed up the convergence
-    param. align_shared_objects = false;      % align multiple objects from various scans 
+    param.initial_probe_rescaling = true;  % find the optimal scaling correction for the provided probe guess in the initial iteration 
+    param.accelerated_gradients_start = inf;  % use accelerated gradients to speed up the convergence
+    param.align_shared_objects = false;      % align multiple objects from various scans 
 
     % extra analysis
-    param. get_fsc_score = false;         % measure evolution of the Fourier ring correlation during convergence 
-    param. mirror_objects = false;        % mirror objects, useful for 0/180deg scan sharing 
+    param.get_fsc_score = false;         % measure evolution of the Fourier ring correlation during convergence 
+    param.mirror_objects = false;        % mirror objects, useful for 0/180deg scan sharing 
     param.align_shared_objects = false;   % align the objects before sharing them onto single one 
 
     % fly scans 
