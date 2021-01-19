@@ -427,6 +427,8 @@ function [self, cache] = init_solver(self,par)
     end
     
     %% multilayer extension 
+    % modified by YJ for more dynamic initialization
+
     % Step 1: choose specific layers from initial object file
     N_layer_input_obj = size(self.object,2);
     par.init_layer_select(par.init_layer_select<0) = [];
@@ -453,8 +455,19 @@ function [self, cache] = init_solver(self,par)
                 end
             end
         case 'interp' % interpolate layers 
-            verbose(0,'Interpolate initial layers')
-            %TODO
+            if ~isempty(par.init_layer_interp)
+                verbose(0,'Interpolate %d initial layers to %d layers', size(self.object,2), length(par.init_layer_interp))
+                for ll = 1:par.Nscans
+                    obj_temp = cat(3,self.object{ll,:});
+                    [N_obj_y,N_obj_x,N_obj_z] = size(obj_temp); 
+                    [X,Y,Z] = meshgrid(linspace(1,N_obj_x,N_obj_x),linspace(1,N_obj_y,N_obj_y),linspace(1,N_obj_z,N_obj_z));
+                    [Xq,Yq,Zq] = meshgrid(linspace(1,N_obj_x,N_obj_x),linspace(1,N_obj_y,N_obj_y),par.init_layer_interp);
+                    obj_temp = interp3(X,Y,Z,obj_temp,Xq,Yq,Zq,'spline');
+                    for jj=1:size(obj_temp,3)
+                        self.object{ll,jj} = obj_temp(:,:,jj);
+                    end
+                end
+            end
         case {'','all'} % default: keep all layers
             % nothing to do
         otherwise
@@ -471,20 +484,22 @@ function [self, cache] = init_solver(self,par)
     end
     
     if size(self.object,2) < par.Nlayers
-        verbose(0,'Initialize extra layers')
         N_add = par.Nlayers - size(self.object,2);
+        verbose(0,'Add %d more layers from %d layer(s)', N_add, size(self.object,2))
         for ll = 1:size(self.object,1) %loop over scans
             obj{ll} = self.object(ll,:);
-            %added by YJ. initialize layers
             switch par.init_layer_append_mode
                 case 'avg' %Not sure when this is useful, but I'll keep it for now
+                    verbose(0,'Append averaged layer')
                     obj_pre = prod(cat(3,self.object{ll,:}),3); 
                     obj_pre = abs(obj_pre).*exp(1i*phase_unwrap(angle(obj_pre))/size(self.object,2));
                     obj_post = obj_pre;
                 case 'edge'
+                    verbose(0,'Append 1st/last layer')
                     obj_pre = self.object{ll,1};
                     obj_post = self.object{ll,end};
                 case {'','vac'}
+                    verbose(0,'Append vacuum layer')
                     %obj_pre = ones(self.Np_o, 'single') + 1e-9i*randn(self.Np_o, 'single');
                     obj_pre = ones(self.Np_o, 'single');
                     obj_post = obj_pre;
@@ -534,6 +549,9 @@ function [self, cache] = init_solver(self,par)
     end
     %}
     % Step 4: assign self.object to object and rescale layers if needed
+    if par.init_layer_scaling_factor~=1
+        verbose(0,'Rescale each layer by %f', par.init_layer_scaling_factor)
+    end
     for j = 1:par.Nlayers  
         for i = 1:max(1, par.Nscans * ~par.share_object) % loop over scans
             object{i,j} = self.object{min(end,i),j}*par.init_layer_scaling_factor;
