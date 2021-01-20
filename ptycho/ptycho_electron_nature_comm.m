@@ -126,6 +126,8 @@ p.   scan.nx = N_scan_x;        %size(dp,3)                                  % r
 p.   scan.ny = N_scan_y;                                          % raster scan: number of steps in y
 p.   scan.step_size_x = scan_step_size;                               % raster scan: step size (grid spacing)
 p.   scan.step_size_y = scan_step_size;                               % raster scan: step size (grid spacing)
+p.   scan.flip_x = true;                                    % raster scan: flip scan order in x direction
+p.   scan.flip_y = true;                                    % raster scan: flip scan order in y direction
 p.   scan.step_randn_offset = 0;                            % raster scan: relative random offset from the ideal periodic grid to avoid the raster grid pathology 
 p.   scan.b = 0;                                            % fermat: angular offset
 p.   scan.n_max = 1e4;                                      % fermat: maximal number of points generated 
@@ -323,7 +325,7 @@ eng. mirror_objects = false;           % mirror objects, useful for 0/180deg sca
 % custom data adjustments, useful for offaxis ptychography
 eng.auto_center_data = false;           % autoestimate the center of mass from data and shift the diffraction patterns so that the average center of mass corresponds to center of mass of the provided probe 
 eng.auto_center_probe = false;          % center the probe position in real space before reconstruction is started 
-eng.custom_data_flip = [1,1,1];         % apply custom flip of the data [fliplr, flipud, transpose]  - can be used for quick testing of reconstruction with various flips or for reflection ptychography 
+eng.custom_data_flip = [0,0,1];         % apply custom flip of the data [fliplr, flipud, transpose]  - can be used for quick testing of reconstruction with various flips or for reflection ptychography 
 eng.apply_tilted_plane_correction = ''; % if any(p.sample_rotation_angles([1,2]) ~= 0),  this option will apply tilted plane correction. (a) 'diffraction' apply correction into the data, note that it is valid only for "low NA" illumination  Gardner, D. et al., Optics express 20.17 (2012): 19050-19059. (b) 'propagation' - use tilted plane propagation, (c) '' - will not apply any correction 
 
 %% added by YJ
