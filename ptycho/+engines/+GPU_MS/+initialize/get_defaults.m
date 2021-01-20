@@ -13,6 +13,7 @@ function [param] = get_defaults
     param.compress_data = true;  % apply online compress on the GPU data 
     param.gpu_id = []; % default GPU id, [] means choosen by matlab
     param.check_gpu_load = true;
+    param.obj_size_limit_on_gpu = inf; % maximum object size (in MB) allowed on gpu. Automatically use cpu if exceed the limit.
     
     %% basic recontruction parameters 
     %% PIE 

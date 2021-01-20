@@ -11,12 +11,12 @@
 % ++ self        self-like structure with final reconstruction
 %
 
-
 function self = regulation_multilayers(self, par, cache)
     import engines.GPU_MS.GPU_wrapper.*
     %% Added by ZC. Use CPU is object size is too big
-    Obj_size_limit = 1024; % object size limit in MB
-    Obj_size_limit = Obj_size_limit / 8 * 2^20 ;
+    % par.obj_size_limit_on_gpu is maximum object size (in MB) allowed on gpu.
+    % Automatically use cpu if exceed the limit.
+    Obj_size_limit = par.obj_size_limit_on_gpu / 8 * 2^20 ;
     %%
     Npix = [self.Np_o, par.Nlayers]; % -1, Not last inf layer, by Zhen Chen
     for i = 1:3
@@ -30,10 +30,12 @@ function self = regulation_multilayers(self, par, cache)
     Wa = W.*exp(-alpha*(grid{1}.^2 + grid{2}.^2));
     
     for kk = 1:size(self.object,1)
-        obj = cat(3, self.object{kk,:});
         %% Added by ZC. use CPU to save GPU memory if object is too big
-        if numel(obj) > Obj_size_limit && par.use_gpu 
-          obj=gather(obj);
+        if  numel(self.object{kk,1}) * size(self.object,2) > Obj_size_limit && par.use_gpu
+            object=cellfun(@gather, self.object(kk,:),'UniformOutput',false);
+            obj = cat(3, object{:});
+        else
+            obj = cat(3, self.object{kk,:});
         end
         %%
         % find correction for amplitude 
