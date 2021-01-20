@@ -262,17 +262,6 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         [self, cache] = accelerate_gradients(self, par, cache, iter); 
     end
     
-        %% suppress large amplitude of object, Added by ZC
-%     if iter >= par.object_change_start && par.Nlayers > 1
-%         for ll=1:par.Nlayers
-%             temp = abs(self.object{ll});
-%             if any(gather(temp(:))>10)
-%                 keyboard;
-%             end
-%             temp (temp> 10) =1;
-%             self.object{ll} = temp.* exp(1i* angle(self.object{ll}));
-%         end
-%     end
     %% %%%%%%%%%%%%%%%%%%%%%%%%  PERFORM ONE ITERATION OF THE SELECTED METHOD %%%%%%%%%%%%%%%%%%%%%
     switch  lower(par.method)
         case {'epie', 'hpie'}
@@ -370,16 +359,16 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
          %    Gfun(@local_TV2D_chambolle,self.object{ll}(cache.object_ROI{:}), par.TV_lambda, N_tv_iter);
         end
     end
-    %{
+    
     %% suppress large amplitude of object, Added by ZC
-    if iter >= par.object_change_start && par.Nlayers > 1
+    if iter >= par.object_change_start && par.amplitude_threshold_object < inf 
         for ll=1:par.Nlayers
             temp = abs(self.object{ll});
-            temp (temp> 2) =1;
+            temp (temp > par.amplitude_threshold_object) = 1;
             self.object{ll} = temp.* exp(1i* angle(self.object{ll}));
         end
     end
-    %}
+    
     %% weak positivity object 
     if iter > par.object_change_start  && any(par.positivity_constraint_object)
         for ll = 1:par.Nlayers 
@@ -627,8 +616,13 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         p.dx_spec = self.pixel_size;
         p.lambda = self.lambda;
         
+        % store regularization parameters
+        if par.amplitude_threshold_object<inf
+            p.reg.amplitude_threshold_object = par.amplitude_threshold_object;
+        end
+        
         % store parameters related to multi-slice
-        p.multi_slice_param.z_distance  = self.z_distance;
+        p.multi_slice_param.z_distance = self.z_distance;
         p.multi_slice_param.regularize_layers = par.regularize_layers;
         p.multi_slice_param.preshift_ML_probe = par.preshift_ML_probe;
         p.multi_slice_param.rmvac = par.rmvac;
