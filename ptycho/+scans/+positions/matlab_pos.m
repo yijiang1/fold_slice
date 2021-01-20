@@ -64,9 +64,17 @@ for ii = 1:p.numscans
         case 'raster'
             %for iy=0:p.scan.ny
             %    for ix=0:p.scan.nx
-            for iy=1:p.scan.ny %modified by YJ. seems odd to begin with 0...
-                for ix=1:p.scan.nx
-                    xy = [iy * p.scan.step_size_y, ix *  p.scan.step_size_x] + ...
+            scan_order_x = 1:p.scan.nx;
+            scan_order_y = 1:p.scan.ny;
+            if isfield(p.scan,'flip_x') && p.scan.flip_x
+                scan_order_x = fliplr(scan_order_x);
+            end
+            if isfield(p.scan,'flip_y') && p.scan.flip_y
+                scan_order_y = fliplr(scan_order_y);
+            end
+            for iy=1:length(scan_order_y) %modified by YJ. seems odd to begin with 0...
+                for ix=1:length(scan_order_x)
+                    xy = [scan_order_y(iy) * p.scan.step_size_y, scan_order_x(ix) * p.scan.step_size_x] + ...
                             randn(1,2).*p.scan.step_randn_offset.*[ p.scan.step_size_y,  p.scan.step_size_x];
                     positions_real(end+1,:) = xy; %#ok<AGROW>
                 end
@@ -83,6 +91,7 @@ for ii = 1:p.numscans
                     positions_real(end+1,:) = xy; %#ok<AGROW>
                 end
             end
+            
         case 'round_roi'
             rmax = sqrt((p.scan.lx/2)^2 + (p.scan.ly/2)^2);
             nr = 1 + floor(rmax/p.scan.dr);
@@ -123,8 +132,6 @@ for ii = 1:p.numscans
                     positions_real(end+1,:) = xy;
                 end
             end
-            
-            
             
         case 'custom'
             fn_splt = strsplit(p.scan.custom_positions_source,'.');
