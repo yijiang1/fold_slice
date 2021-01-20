@@ -26,7 +26,8 @@ function [param] = get_defaults
     param.share_object = false;
     param.delta = 0;  % press values to zero out of the probe area !!  illim < max*delta is removed 
     param.relax_noise = 0.0;  % relaxation for noise, lower => slower convergence, more robust 
-    param.positivity_constraint_object = 0; % enforce weak positivity in object 
+    param.positivity_constraint_object = 0; % enforce weak positivity in object
+    param.amplitude_threshold_object = inf; % enforce maximum amplitude to object. Values larger than the threshold is set to 1
     param.Nmodes = 1;  %  number of multi apertures , always better to start wih one !! 
     param.probe_modes = 1; % number of probes 
     param.object_modes = 1;  %  number of multi apertures , always better to start wih one !! 
