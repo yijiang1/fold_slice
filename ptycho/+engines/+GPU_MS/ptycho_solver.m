@@ -631,6 +631,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         % store parameters for object initialization
         p.obj_init_param.init_layer_select = par.init_layer_select;
         p.obj_init_param.init_layer_preprocess = par.init_layer_preprocess;
+        p.obj_init_param.init_layer_interp = par.init_layer_interp;
         p.obj_init_param.init_layer_append_mode = par.init_layer_append_mode;
         p.obj_init_param.init_layer_scaling_factor = par.init_layer_scaling_factor;
         if ~isempty(par.p.initial_iterate_object_file) % if initial object is from a given file
