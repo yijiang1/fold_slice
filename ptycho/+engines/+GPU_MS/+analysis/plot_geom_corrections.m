@@ -97,7 +97,7 @@ function plot_geom_corrections(self, mode, object, iter, par, cache)
 
     if iter >= par.probe_position_search && ~isempty(par.probe_geometry_model)
         clf()
-        x_iters=[1,[par.probe_position_search:iter]]; % correction of iteration index in x-axis by ZC
+        x_iters=[par.probe_position_search:iter]; % correction of iteration index in x-axis by ZC
         subplot(1,Nplots,1)
         hold all
         plot(x_iters,mode.scales , '-'); axis tight 
