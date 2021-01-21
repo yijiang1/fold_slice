@@ -51,7 +51,7 @@ assert(~isempty(p.energy), 'Provide p.energy or source of metadata p.src_metadat
 % modified by YJ for electron pty
 if isfield(p,'beam_source') && strcmp(p.beam_source, 'electron')
     %use relativistic corrected formula for electron pty
-    p.lambda = 12.398/sqrt((2*511.0+p.energy).*p.energy); %angstrom
+    p.lambda = 12.3986/sqrt((2*511.0+p.energy).*p.energy); %angstrom
 else
     p.lambda = 1.23984193e-9/p.energy;                          % wavelength
 end
