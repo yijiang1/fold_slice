@@ -87,7 +87,13 @@ else
     % standard farfield ptychography
     % modified by YJ for electron pty
     if isfield(p,'beam_source') && strcmp(p.beam_source, 'electron')
-        p.dx_spec = 1./p.asize/p.dk; %angstrom
+        if isfield(p,'dk')  %A^-1/pix 
+            p.dx_spec = 1./p.asize/p.dk; %angstrom
+        elseif isfield(p,'d_alpha') % mrad/pix
+            p.dx_spec = 1./p.asize/(p.d_alpha/1e3/p.lambda); %angstrom
+        else
+            error('dk or d_alpha are not speficied!')
+        end
     else
         p.dx_spec = p.lambda*p.z ./ (p.asize*p.ds);                   % resolution in the specimen plane
     end
