@@ -97,28 +97,29 @@ function plot_geom_corrections(self, mode, object, iter, par, cache)
 
     if iter >= par.probe_position_search && ~isempty(par.probe_geometry_model)
         clf()
+        x_iters=[par.probe_position_search:iter]; % correction of iteration index in x-axis by ZC
         subplot(1,Nplots,1)
         hold all
-        plot(mode.scales , '-'); axis tight 
+        plot(x_iters,mode.scales , '-'); axis tight 
 		ylabel('Relative pixel scaling correction [-]')
 		xlabel('Iteration')
         hold off 
         grid on 
         title('Scales')
         subplot(1,Nplots,2)
-        plot(mode.rotation , '-'); axis tight 
+        plot(x_iters,mode.rotation , '-'); axis tight 
 		ylabel('Rotation  [deg]')
         title('Rotation')
 		xlabel('Iteration')
         grid on 
         subplot(1,Nplots,3)
-        plot(mode.shear , '-'); axis tight 
+        plot(x_iters,mode.shear , '-'); axis tight 
 		ylabel('Shear  [deg]')
         title('Shear')
 		xlabel('Iteration')
         grid on 
         subplot(1,Nplots,4)
-        plot(mode.asymmetry*100 , '-'); axis tight 
+        plot(x_iters,mode.asymmetry*100 , '-'); axis tight 
 		ylabel('Asymmetry [%]')
         title('Asymmetry')
 		xlabel('Iteration')
