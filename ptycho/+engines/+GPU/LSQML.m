@@ -124,7 +124,9 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
                 end
             end
         end
-        
+        %if iter>0
+        %    disp(any(~isfinite(fourier_error(iter,:))))
+        %end
         if strcmp(par.likelihood, 'poisson')   || iter == 0
             [chi,R] = modulus_constraint(modF,aPsi,psi, mask, noise, par, 1);
             if iter == 0
@@ -265,7 +267,6 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
                 self.object = update_object(self, self.object, object_upd_sum, layer_ids{jj}(layer), llo, {g_ind}, scan_ids(jj), par, cache, beta_object);
             end
 
-               
             if  ll == 1  &&  layer == ceil(par.Nlayers/2)  % assume that sample in center is best constrained 
                 %%%%%%%%%%%%% update other parameters of the ptychography model
                 if  iter >= par.probe_position_search || iter >= par.detector_rotation_search || iter >= par.detector_scale_search
@@ -309,7 +310,10 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
 
      
    end
-   
+   %if iter>0
+   %    disp(size(fourier_error(iter,:)))
+   %    disp(any(~isfinite(fourier_error(iter,:))))
+   %end
    if iter == 0
        % apply initial correction for the probe intensity and return
        probe_amp_corr = sqrt(probe_amp_corr(1) / probe_amp_corr(2)); %% calculate ratio between modF^2 and aPsi^2
@@ -346,15 +350,14 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
         %% apply momentum update on the probe
         [self, cache] = add_momentum_probe(self, cache, par, {probe_update_sum}, iter, fourier_error, beta_probe);
     end
-
+    
     %% FLY-SCAN: join all subprobes
     if iter >= par.probe_change_start
        if is_used(par,'fly_scan')
            probe_new = 0;
            for ll = 1:par.Nmodes
-                probe_new = probe_new + self.probe{ll}/par.Nmodes;
+               probe_new = probe_new + self.probe{ll}/par.Nmodes;
            end
-           %disp(size(probe_new))
            for ll = 1:par.Nmodes
                % allow variation of the modes intensity 
                 aa = sum2( self.probe{ll} .* conj( probe_new));
@@ -364,9 +367,10 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
                 proj(ll,1,:) = real(aa./ bb) ;
 
                 %proj(ll,1,:) = real(sum2( self.probe{ll} .* conj( probe_new)) ./ sum2(abs(probe_new).^2)) ;
-                self.probe{ll} = proj(ll,1,:) .* probe_new;
+                %self.probe{ll} = proj(ll,1,:) .* probe_new;
+                
                 % assume constant intensity 
-%                  self.probe{ll} =  probe_new;
+                  self.probe{ll} =  probe_new;
            end
        end
     end

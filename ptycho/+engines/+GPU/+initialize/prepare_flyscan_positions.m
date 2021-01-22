@@ -22,23 +22,6 @@ import plotting.*
     jumps = sum(abs(jumps),2);
     % empirical condition 
     jumps = find(jumps > 10*median(jumps));
-    %{
-    %% added by YJ
-    %% ADVANCED FLY SCAN - LINE SCAN 
-    % interpolate the other modes into new positions 
-    pos = self.modes{1}.probe_positions;
-
-    %pos = self.probe_positions_0; %% modified by YJ, use initial position
-   
-    for ll = 1:par.Nmodes            
-        ratio = par.flyscan_dutycycle*(ll-1)/par.Nmodes;
-        self.modes{ll}.probe_positions = pos(min((1:self.Npos)+1,self.Npos),:)*ratio + (1-ratio)*pos;
-        if ~isempty(jumps)
-            % expected step continuation
-            self.modes{ll}.probe_positions(jumps,:) = bsxfun(@plus, self.modes{ll}.probe_positions(jumps-1,:),step);
-        end
-    end
-    %}
     
     if length(jumps) < par.Nscans
         % assume that smooth path is used 
@@ -64,6 +47,29 @@ import plotting.*
         %disp('FLY SCAN - LINE SCAN')
         % interpolate the other modes into new positions 
         pos = self.modes{1}.probe_positions;
+        %modified by YJ
+        %pos(:,1): horizontal positions in pixels
+        %pos(:,2): vertical positions in pixels
+        %TODO: suport non-rectangular grid
+        for ll = 1:par.Nmodes
+            ratio = par.flyscan_dutycycle*(ll-1)/par.Nmodes;
+            pos_temp = pos;
+            Ny = length(jumps)+1;
+            Nx = length(pos)/Ny;
+            x = 1:Nx;
+            x_interp = (1+ratio):1:(Nx+ratio);
+            
+            for i=1:Ny
+                p_lb = (i-1)*Nx+1;
+                p_ub = i*Nx;
+                pos_temp(p_lb:p_ub,1) = interp1(x,pos(p_lb:p_ub,1),x_interp,'pchip');
+                pos_temp(p_lb:p_ub,2) = interp1(x,pos(p_lb:p_ub,2),x_interp,'pchip');  
+                self.modes{ll}.probe_positions = pos_temp;
+            end
+        end
+        
+        %{ 
+        %MO's code - may have some bugs
         for ll = 1:par.Nmodes
             ratio = par.flyscan_dutycycle*(ll-1)/par.Nmodes;
             self.modes{ll}.probe_positions = pos(min((1:self.Npos)+1,self.Npos),:)*ratio + (1-ratio)*pos;
@@ -72,6 +78,7 @@ import plotting.*
                 self.modes{ll}.probe_positions(jumps,:) = bsxfun(@plus, self.modes{ll}.probe_positions(jumps-1,:),step);
             end
         end
+        %}
     end
     
 end
