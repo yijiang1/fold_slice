@@ -66,18 +66,32 @@ for ii = 1:p.numscans
             %    for ix=0:p.scan.nx
             scan_order_x = 1:p.scan.nx;
             scan_order_y = 1:p.scan.ny;
-            if isfield(p.scan,'flip_x') && p.scan.flip_x
-                scan_order_x = fliplr(scan_order_x);
+            if isfield(p.scan, 'custom_flip')  && any(p.scan.custom_flip) % change flips similar to data_flip by ZC
+                warning('Applying custom scan flip: %i %i %i ', p.scan.custom_flip(1), p.scan.custom_flip(2), p.scan.custom_flip(3))
+                if p.scan.custom_flip(1)
+                    scan_order_x = fliplr(scan_order_x); 
+                end
+                if p.scan.custom_flip(2)
+                     scan_order_y = fliplr(scan_order_y);
+                end
+
             end
-            if isfield(p.scan,'flip_y') && p.scan.flip_y
-                scan_order_y = fliplr(scan_order_y);
-            end
+
+%             if isfield(p.scan,'flip_x') && p.scan.flip_x % YJ's format
+%                 scan_order_x = fliplr(scan_order_x);
+%             end
+%             if isfield(p.scan,'flip_y') && p.scan.flip_y
+%                 scan_order_y = fliplr(scan_order_y);
+%             end
             for iy=1:length(scan_order_y) %modified by YJ. seems odd to begin with 0...
                 for ix=1:length(scan_order_x)
                     xy = [scan_order_y(iy) * p.scan.step_size_y, scan_order_x(ix) * p.scan.step_size_x] + ...
                             randn(1,2).*p.scan.step_randn_offset.*[ p.scan.step_size_y,  p.scan.step_size_x];
                     positions_real(end+1,:) = xy; %#ok<AGROW>
                 end
+            end
+            if isfield(p.scan, 'custom_flip')  && p.scan.custom_flip(3) % switch x/y by ZC
+                positions_real=fliplr(positions_real);
             end
             
         case 'round'
