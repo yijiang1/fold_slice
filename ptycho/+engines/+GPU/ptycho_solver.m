@@ -125,7 +125,12 @@ fourier_error_mean_previous = 1e10; %for convergence check
 if par.fourier_error_threshold<inf
     verbose(0, 'Convergence check is enabled. Threshold = %3.3g.', par.fourier_error_threshold)
 end
-
+%% added by YJ: update figures after initialization
+if par.p.use_display
+    if verbose() <= 0
+    	ptycho_plot_wrapper(self, par, 0)
+    end
+end
 %%
 for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     if iter == par.probe_position_search || iter==par.detector_scale_search+1 || iter == par.detector_rotation_search+1
@@ -386,79 +391,73 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     
   %% PLOTTING 
     %%%% plot  results %%%%%%%%%%%%
-    if mod(iter, par.plot_results_every ) == 0 &&  par.plot_results_every ~=0   
-          %try
-              if verbose()  <= 0
-                  % use cSAXS plorring rutines 
-                  ptycho_plot_wrapper(self, par, fourier_error)
-              else
+    if par.p.use_display && mod(iter, par.plot_results_every)==0 &&  par.plot_results_every~=0     
+        try
+            if verbose() <= 0
+                % use cSAXS plorring rutines 
+                ptycho_plot_wrapper(self, par, fourier_error)
+            else
                 %   use more detailed plotting rutines 
-                if (par.probe_modes > 1 )
+                if (par.probe_modes > 1)
                     %% probe incoherent modes 
                     plot_probe_modes(self,par);                        
                 end
-                if ( par.Nlayers > 1) || (par.Nscans > 1 && ~par.share_object)
+                if (par.Nlayers > 1) || (par.Nscans > 1 && ~par.share_object)
                     %% object incoherent modes 
                     plot_object_modes(self, cache)
                 end
 
                 plot_results(self,cache, par, Ggather(fourier_error), ...
                 self.modes{mode_id}.probe_positions)
-              
-              end
+            end
 
-                % show variable modes 
-                if (par.variable_probe  && par.variable_probe_modes > 0)
-                    plot_variable_probe(self, par)
-                end
-              
-                % show position correction in the fourier plane 
-                if iter > par.probe_fourier_shift_search
-                    plotting.smart_figure(24654)
-                    clf
-                    hold all
-                    for ll = 1:par.Nmodes    
-                        plot(self.modes{ll}.probe_fourier_shift)
-                    end    
-                    hold off
-                    grid on 
-                    axis tight
-                    xlabel('Position #')
-                    ylabel('Corrected probe shift in Fourier plane [px]')
-                    title('Fourier space probe shift')
-                end                
-                
-   
-                % show position correction 
-                if iter > min([par.probe_position_search, par.estimate_NF_distance, par.detector_rotation_search, par.detector_scale_search]) ...
-                        && is_method(par, {'PIE', 'ML'}) 
-                         plot_geom_corrections(self, self.modes{1}, Ggather(self.object{1}),iter, par, cache)
-                    if iter > min(par.detector_rotation_search, par.detector_scale_search)
+            % show variable modes 
+            if (par.variable_probe && par.variable_probe_modes > 0)
+                plot_variable_probe(self, par)
+            end
+
+            % show position correction in the fourier plane 
+            if iter > par.probe_fourier_shift_search
+                plotting.smart_figure(24654)
+                clf
+                hold all
+                for ll = 1:par.Nmodes    
+                    plot(self.modes{ll}.probe_fourier_shift)
+                end    
+                hold off
+                grid on 
+                axis tight
+                xlabel('Position #')
+                ylabel('Corrected probe shift in Fourier plane [px]')
+                title('Fourier space probe shift')
+            end                
+
+            % show position correction 
+            if iter > min([par.probe_position_search, par.estimate_NF_distance, par.detector_rotation_search, par.detector_scale_search]) ...
+                    && is_method(par, {'PIE', 'ML'}) 
+                     plot_geom_corrections(self, self.modes{1}, Ggather(self.object{1}),iter, par, cache)
+                if iter > min(par.detector_rotation_search, par.detector_scale_search)
                     for i = 1:max(1,par.Nrec)
                         verbose(1,sprintf(' Reconstruction id: %i =============  Detector pixel scale: %0.5g  Detector rotation: %0.5g deg', ...
                                             i,  1-self.modes{i}.probe_scale_upd(end) , self.modes{i}.probe_rotation(end,1)))
                     end
-                    end
                 end
-                    
-                if par.get_fsc_score && ~isempty(fsc_score)
-                    % plot score estimated by the fourier ring correlation 
-                    plot_frc_analysis(fsc_score, par)
-                end
+            end
+
+            if par.get_fsc_score && ~isempty(fsc_score)
+                % plot score estimated by the fourier ring correlation 
+                plot_frc_analysis(fsc_score, par)
+            end
 
             drawnow
-        %{
+   
         catch err
-            %warning(err.message)
-            disp(err.message)
-            
+            warning(err.message)
             if verbose()  > 1
-                keyboard
+            	keyboard
             end
         end
-        %}
     end
-
     %% save intermediate images, added by YJ
     if isfield(par,'save_results_every') && (mod(iter, par.save_results_every ) == 0 &&  par.save_results_every ~=0) || iter == par.number_iterations
         if ~exist(par.fout, 'dir')
