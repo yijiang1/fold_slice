@@ -360,17 +360,13 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
            end
            for ll = 1:par.Nmodes
                % allow variation of the modes intensity 
-                aa = sum2( self.probe{ll} .* conj( probe_new));
-                bb = sum2(abs(probe_new).^2);
-                %size(aa)
-                %size(bb)
+                aa = sum2(self.probe{ll} .* conj(probe_new));
+                bb = sum2(abs(probe_new).^2);                
                 proj(ll,1,:) = real(aa./ bb) ;
-
-                %proj(ll,1,:) = real(sum2( self.probe{ll} .* conj( probe_new)) ./ sum2(abs(probe_new).^2)) ;
-                %self.probe{ll} = proj(ll,1,:) .* probe_new;
+                self.probe{ll} = proj(ll,1,:) .* probe_new;
                 
                 % assume constant intensity 
-                  self.probe{ll} =  probe_new;
+                  %self.probe{ll} =  probe_new;
            end
        end
     end
