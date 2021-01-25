@@ -212,7 +212,8 @@ function [self, cache] = init_solver(self,par)
     if ~iscell(self.affine_matrix)
         self.affine_matrix = {self.affine_matrix}; 
     end
-    %Comment by YJ: par.Nmodes seems to be # of modes for A-fly scan
+    % Note by YJ:
+    % par.Nmodes seems to be the # of probe modes in mixed-state or arbitrary-path fly-scan
     modes = cell(max(par.Nmodes, par.Nlayers),1);
     for i = 1:max(par.Nmodes, par.Nlayers)
         verbose(2,'Creating new modes files ')
@@ -252,7 +253,6 @@ function [self, cache] = init_solver(self,par)
              self = prepare_flyscan_positions(self, par); 
              modes{i}.probe_positions = self.modes{i}.probe_positions; %added by YJ. seems like a bug
              modes{i}.probe_positions_0 = self.probe_positions_0; %added by YJ. seems like a bug
-
         else
            %% get positions for normal tomo 
             try  %  try to reuse the positions of there are saved 
@@ -347,14 +347,13 @@ function [self, cache] = init_solver(self,par)
     for i=2:par.Nmodes
         disp(i)
         scatter(modes{i}.probe_positions(:,1),modes{i}.probe_positions(:,2),'.'); axis image
-    
     end
     %}
     %%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%% PREPARE PROBES, INCOHERENT MODES %%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   
+
     probe_0 = mean(self.probe{1},3);
     for i = 1:par.probe_modes
         try
@@ -394,12 +393,19 @@ function [self, cache] = init_solver(self,par)
             end
          end
     end
+    %% added by YJ: only use the primary probe for arbitrary-path fly-scan modes
+    if is_used(par, 'fly_scan') && par.Nrec > 1
+        for i = 2:par.Nrec %par.Nrec = par.Nmodes
+            probe{i} = probe{1};
+        end
+    end
+    %%
     if par.probe_modes > par.Nrec
         %  orthogonalization of incoherent probe modes 
         if is_used(par, 'fly_scan')
             probe_tmp = probe;
             % orthogonalize the modes with all the other shifted modes 
-            for i = 1:par.Nrec
+            for i = 1:par.Nrec %par.Nrec = par.Nmodes
                 dx = median(modes{i}.probe_positions - modes{1}.probe_positions);
                 probe_tmp{i} = imshift_fft(probe_tmp{i}, dx); 
             end
@@ -481,8 +487,6 @@ function [self, cache] = init_solver(self,par)
             
         end
     end
-    
-    
     
     for i = 1:numel(object)
         object{i} = single(object{i});
