@@ -62,27 +62,18 @@ for ii = 1:p.numscans
     positions_real = zeros(0,2); 
     switch p.scan.type
         case 'raster'
-            %for iy=0:p.scan.ny
-            %    for ix=0:p.scan.nx
             scan_order_x = 1:p.scan.nx;
             scan_order_y = 1:p.scan.ny;
-            if isfield(p.scan, 'custom_flip')  && any(p.scan.custom_flip) % change flips similar to data_flip by ZC
+            % Added by ZC: flip positions similar to eng.custom_data_flip in GPU engines
+            if isfield(p.scan, 'custom_flip') && any(p.scan.custom_flip) 
                 warning('Applying custom scan flip: %i %i %i ', p.scan.custom_flip(1), p.scan.custom_flip(2), p.scan.custom_flip(3))
                 if p.scan.custom_flip(1)
                     scan_order_x = fliplr(scan_order_x); 
                 end
                 if p.scan.custom_flip(2)
-                     scan_order_y = fliplr(scan_order_y);
+                    scan_order_y = fliplr(scan_order_y);
                 end
-
             end
-
-%             if isfield(p.scan,'flip_x') && p.scan.flip_x % YJ's format
-%                 scan_order_x = fliplr(scan_order_x);
-%             end
-%             if isfield(p.scan,'flip_y') && p.scan.flip_y
-%                 scan_order_y = fliplr(scan_order_y);
-%             end
 
             for iy=1:length(scan_order_y) %modified by YJ. seems odd to begin with 0...
                 for ix=1:length(scan_order_x)
@@ -91,8 +82,9 @@ for ii = 1:p.numscans
                     positions_real(end+1,:) = xy; %#ok<AGROW>
                 end
             end
-            if isfield(p.scan, 'custom_flip')  && p.scan.custom_flip(3) % switch x/y by ZC
-                positions_real=fliplr(positions_real);
+            
+            if isfield(p.scan, 'custom_flip') && p.scan.custom_flip(3) % switch x/y by ZC
+            	positions_real=fliplr(positions_real);
             end
             
         case 'round'
