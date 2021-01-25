@@ -8,12 +8,13 @@ base_path = '/home/beams2/YJIANG/ptychography/electron/mos2/nat_comm/';
 roi_label = '0_Ndp128';
 scan_number = 1;
 scan_string_format = '%01d';
-Ndpx=128;  % size of cbed
+Ndpx = 128;  % size of cbed
 alpha0 = 21.4; % semi-convergence angle (mrad)
 rbf = 26; % radius of the BF disk in cbed. Can be used to calculate dk
 %dk = 0.0197; % pixel size in cbed (1/A). Should be calibrated as accurate as possible
 voltage = 80;
-rot_ang = -30; %angle between cbed and scan coord.
+rot_ang = 30; %angle between cbed and scan coord.
+
 scan_step_size = 0.85; %angstrom
 N_scan_y = 60; %number of scan points
 N_scan_x = 60;
@@ -80,27 +81,12 @@ p.   detector.binning = false;                              % = true to perform 
 p.   detector.upsampling = false;                           % upsample the measured data by 2^data_upsampling, (transposed operator to the binning), it can be used for superresolution in nearfield ptychography or to account for undersampling in a far-field dataset
 p.   detector.burst_frames = 1;                             % number of frames collected per scan position
 
-p.   prepare.data_preparator = 'matlab_aps';                    % data preparator; 'python' or 'matlab' or 'matlab_aps'
+p.   prepare.data_preparator = 'matlab_aps';                % data preparator; 'python' or 'matlab' or 'matlab_aps'
 p.   prepare.auto_prepare_data = true;                      % if true: prepare dataset from raw measurements if the prepared data does not exist
 p.   prepare.force_preparation_data = true;                 % Prepare dataset even if it exists, it will overwrite the file % Default: @prepare_data_2d
 p.   prepare.store_prepared_data = false;                    % store the loaded data to h5 even for non-external engines (i.e. other than c_solver)
 p.   prepare.prepare_data_function = '';                    % (used only if data should be prepared) custom data preparation function handle;
 p.   prepare.auto_center_data = false;                      % if matlab data preparator is used, try to automatically center the diffraction pattern to keep center of mass in center of diffraction
-
-p.   prealign_FP = false;                                   % use prealignment routines for Fourier Ptychography
-p.   prealign.asize = [1000 1000];                          % array size for the alignment procedure
-p.   prealign.crop_dft = 100;                               % crop the dftregistration input
-p.   prealign.prealign_data = true;                         % recalculate the alignment
-p.   prealign.axis = 1;                                     % alignment axis
-p.   prealign.type = {'round'};                             % alignment routine
-p.   prealign.numiter = 5;                                  % number of alignment iterations
-p.   prealign.rad_filt_min = 25e-6;                         % discard positions < rad_filt_min radius
-p.   prealign.rad_filt_max = 80e-6;                         % discard positions > rad_filt_max radius
-p.   prealign.load_alignment = true;                        % load alignment from an alignment_file
-p.   prealign.alignment_file = 'alignment_S00249.mat';      % alignment file
-p.   prealign.mag_est = 160;                                % estimated magnification; used as an initial guess for the distortion correction matrix
-p.   prealign.use_distortion_corr = true;                   % use distortion correction; if distortion_corr is empty, it will calculate a new correction based on the shifts retrieved from the alignment
-p.   prealign.distortion_corr = [];                         % distortion correction matrix; [161.3003, 3.4321, -6.7294, 0.0000, 0.9675, 2.0220, 0.0540];
 
 % Scan positions
 p.   src_positions = 'matlab_pos';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
@@ -129,8 +115,7 @@ p.   scan.nx = N_scan_x;        %size(dp,3)                                  % r
 p.   scan.ny = N_scan_y;                                          % raster scan: number of steps in y
 p.   scan.step_size_x = scan_step_size;                               % raster scan: step size (grid spacing)
 p.   scan.step_size_y = scan_step_size;                               % raster scan: step size (grid spacing)
-p.   scan.flip_x = true;                                    % raster scan: flip scan order in x direction
-p.   scan.flip_y = true;                                    % raster scan: flip scan order in y direction
+p.   scan.custom_flip = [1,1,1];                            % raster scan: apply custom flip [fliplr, flipud, transpose] to positions- similar to eng.custom_data_flip in GPU engines. Added by ZC.
 p.   scan.step_randn_offset = 0;                            % raster scan: relative random offset from the ideal periodic grid to avoid the raster grid pathology 
 p.   scan.b = 0;                                            % fermat: angular offset
 p.   scan.n_max = 1e4;                                      % fermat: maximal number of points generated 
@@ -296,7 +281,6 @@ eng. probe_regularization = 0.1;      % Weight factor for the probe update (iner
 eng. apply_subpix_shift = true;       % apply FFT-based subpixel shift, it is automatically allowed for position refinement
 eng. probe_position_search = N_pos_corr;      % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
 eng. probe_geometry_model = {};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
-%eng. probe_geometry_model = {'rotation'};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
 eng. probe_position_error_max = inf; % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
 eng. apply_relaxed_position_constraint = false; % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
 
@@ -306,8 +290,7 @@ eng. regularize_layers = 0;            % multilayer extension: 0<R<<1 -> apply r
 eng. preshift_ML_probe = true;         % multilayer extension: if true, assume that the provided probe is reconstructed in center of the sample and the layers are centered around this position 
 
 % other extensions 
-eng. background = 0;               % average background scattering level, for OMNI values around 0.3 for 100ms, for flOMNI <0.1 per 100ms exposure, see for more details: Odstrcil, M., et al., Optics letters 40.23 (2015): 5574-5577.
-
+eng. background = 0;                   % average background scattering level, for OMNI values around 0.3 for 100ms, for flOMNI <0.1 per 100ms exposure, see for more details: Odstrcil, M., et al., Optics letters 40.23 (2015): 5574-5577.
 eng. background_width = inf;           % width of the background function in pixels,  inf == flat background, background function is then convolved with the average diffraction pattern in order to account for beam diversion 
 eng. clean_residua = false;            % remove phase residua from reconstruction by iterative unwrapping, it will result in low spatial freq. artefacts -> object can be used as an residua-free initial guess for netx engine
 
@@ -328,7 +311,7 @@ eng. mirror_objects = false;           % mirror objects, useful for 0/180deg sca
 % custom data adjustments, useful for offaxis ptychography
 eng.auto_center_data = false;           % autoestimate the center of mass from data and shift the diffraction patterns so that the average center of mass corresponds to center of mass of the provided probe 
 eng.auto_center_probe = false;          % center the probe position in real space before reconstruction is started 
-eng.custom_data_flip = [0,0,1];         % apply custom flip of the data [fliplr, flipud, transpose]  - can be used for quick testing of reconstruction with various flips or for reflection ptychography 
+eng.custom_data_flip = [0,0,0];         % apply custom flip of the data [fliplr, flipud, transpose]  - can be used for quick testing of reconstruction with various flips or for reflection ptychography 
 eng.apply_tilted_plane_correction = ''; % if any(p.sample_rotation_angles([1,2]) ~= 0),  this option will apply tilted plane correction. (a) 'diffraction' apply correction into the data, note that it is valid only for "low NA" illumination  Gardner, D. et al., Optics express 20.17 (2012): 19050-19059. (b) 'propagation' - use tilted plane propagation, (c) '' - will not apply any correction 
 
 %% added by YJ
