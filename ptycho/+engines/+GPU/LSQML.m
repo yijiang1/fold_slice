@@ -308,7 +308,6 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
             probe_update_sum(:,:,uniq_p_ind,1) = probe_update_sum(:,:,uniq_p_ind,1) + m_probe_update / Nind; 
         end
 
-     
    end
    %if iter>0
    %    disp(size(fourier_error(iter,:)))
@@ -323,9 +322,7 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
        verbose(2,'Probe amplitude corrected by %.3g',probe_amp_corr)
        return
    end
-  
-   
-     
+
    % applying single update emulates behaviour of the original ML method ->
    % provides better noise robustness 
    % advantage is that less memory is needed and no linesearch is required
@@ -361,12 +358,12 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
            for ll = 1:par.Nmodes
                % allow variation of the modes intensity 
                 aa = sum2(self.probe{ll} .* conj(probe_new));
-                bb = sum2(abs(probe_new).^2);                
+                bb = sum2(abs(probe_new).^2);     
                 proj(ll,1,:) = real(aa./ bb) ;
                 self.probe{ll} = proj(ll,1,:) .* probe_new;
                 
                 % assume constant intensity 
-                  %self.probe{ll} =  probe_new;
+                %self.probe{ll} =  probe_new;
            end
        end
     end

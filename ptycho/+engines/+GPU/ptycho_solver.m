@@ -206,14 +206,17 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         aux = online_FSC_estimate(self, par, cache, fsc_score(end,:), iter); 
         fsc_score(end+1,1:size(aux,1), 1:size(aux,2)) = aux; 
     end   
-    %% ADVANCED FLY SCAN. disabled by YJ. it's already calculated init_solver.m . probably useful with position correction?
+    %% ADVANCED FLY SCAN. 
+    % disabled by YJ. seems redundant since it's already calculated init_solver.m .
+    % probably useful with position correction?
+    %{
     if  is_used(par, 'fly_scan')
         if iter == 1
            disp(['== AVG fly scan step ', num2str( median(sqrt(sum(diff(self.probe_positions_0).^2,1)))  )]) 
         end
         self = prepare_flyscan_positions(self, par); 
     end
-    
+    %}
     %% update current probe positions (views)
     if iter <= 1 || iter >= par.probe_position_search
         %%%%%%%%  crop only ROI of the full image for subsequent calculations  %%%%%%%%%% 
