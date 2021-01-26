@@ -3,20 +3,22 @@
 addpath(fullfile(pwd,'utils_electron'))
 FOV = 60; %fixed FOV in angstrom
 N = 128;   % size of diffraction pattern in pixels. only square dp allowed 
-scan_step_zie = 4; %scan step size in angstrom
-N_scans_x = round(FOV/scan_step_zie); % number of scan positions along horizontal direction
-N_scans_y = round(FOV/scan_step_zie); % number of scan positions along vertical direction
+scan_step_size = 3; %scan step size in angstrom
+N_scans_h = round(FOV/scan_step_size); % number of scan positions along horizontal direction
+N_scans_v = round(FOV/scan_step_size); % number of scan positions along vertical direction
 
 maxPosError = 0; %largest randrom position error
-dose = 2e3; %total electron dose (e/A^2)
-Nc_avg = dose*scan_step_zie^2/N^2; %average electron count per detector pixel. For poisson noise, SNR = sqrt(Nc_avg);
+dose = 5e4; %total electron dose (e/A^2)
+Nc_avg = dose*scan_step_size^2/N^2; %average electron count per detector pixel. For poisson noise, SNR = sqrt(Nc_avg);
 base_dir = '/home/beams2/YJIANG/research/algorithm/simulation/FSC_study/electron_ptycho_temp/';
 
 %% load test object
-disp('Loading test object...')
-load(fullfile(pwd,'utils_electron','CuPcCl.mat'))
-%pad object in case of large FOV
-phase_true = padarray(phase_psi,[6400,6400],'circular','post');
+disp('Load test object...')
+%load(fullfile(pwd,'utils_electron','CuPcCl.mat'))
+load(fullfile(pwd,'utils_electron','amorphous_random.mat'))
+
+%pad object in case of large FOV is needed
+%phase_true = padarray(phase_true,[6400,6400],'circular','post');
 r = 4; %resample phase
 phase_true = imresize(phase_true, 1/r);
 %create a complex object
@@ -27,8 +29,8 @@ N_obj = size(object_true,1); %only square object allowed
 ind_obj_center = floor(N_obj/2)+1;
 
 %% generate probe function
-disp('Generating probe function...')
-df = 600; %defocus in angstrom
+disp('Generate probe function...')
+df = 800; %defocus in angstrom
 cs = 0;
 voltage = 300; %beam voltage in keV
 alpha_max = 18; %convergence angle in mrad
@@ -40,7 +42,7 @@ dk = 1/dx/N; %fourier-space pixel size in 1/A
 rbf = alpha_max/1e3/lambda/dk;
 %% save initial probe and parameters
 probe = probe_true;
-data_dir = strcat('CuPcCl_ss',num2str(scan_step_zie),'_a',num2str(alpha_max),'_df',num2str(df),'_dose',num2str(dose),'/');
+data_dir = strcat('amorph_ss',num2str(scan_step_size),'_a',num2str(alpha_max),'_df',num2str(df),'_dose',num2str(dose),'/');
 mkdir(fullfile(base_dir,data_dir))
 p = {};
 p.binning = false;
@@ -50,50 +52,52 @@ p.voltage = voltage;
 p.df = df;
 p.alpha_max = alpha_max;
 p.cs = cs;
-p.N_scans_x = N_scans_x;
-p.N_scans_y = N_scans_y;
+p.N_scans_h = N_scans_h;
+p.N_scans_v = N_scans_v;
 save(strcat(base_dir,data_dir,'init_probe'),'probe','p')
+
+%% Generate scan positions
+disp('Generate scan positions...')
+pos_h = (1 + (0:N_scans_h-1) *scan_step_size);
+pos_v = (1 + (0:N_scans_v-1) *scan_step_size);
+% centre this
+pos_h  = pos_h - (mean(pos_h));
+pos_v  = pos_v - (mean(pos_v));
+[Y,X] = meshgrid(pos_h, pos_v);
+Y = Y';
+X = X';
+pos_true_h = X(:); % true posoition
+pos_true_v = Y(:);
+
+pos_recon_init_h = pos_true_h;
+pos_recon_init_v = pos_true_v;
+
+%add random position errors - to simulate scan noise
+pos_recon_init_h = pos_recon_init_h + maxPosError*(rand(size(pos_recon_init_h))*2-1);
+pos_recon_init_v = pos_recon_init_v + maxPosError*(rand(size(pos_recon_init_v))*2-1);
+
+%
+%calculate indicies for all scans
+N_scan = length(pos_true_h);
+%position = pi(integer) + pf(fraction)
+pv_i = round(pos_true_v/dx);
+pv_f = pos_true_v - pv_i*dx;
+ph_i = round(pos_true_h/dx);
+ph_f = pos_true_h - ph_i*dx;
+
+ind_h_lb = ph_i - floor(N/2) + ind_obj_center;
+ind_h_ub = ph_i + ceil(N/2) -1 + ind_obj_center;
+ind_v_lb = pv_i - floor(N/2) + ind_obj_center;
+ind_v_ub = pv_i + ceil(N/2) -1 + ind_obj_center;
 %% generate two datasets (required by FSC)
+disp('Generating diffraction patterns...')
+close all
+
 for j=1:2
     disp(j)
-    % generate scan positions
-    close all
-    disp('Generating scan positions...')
-
-    pos_x = (1 + (0:N_scans_x-1) *scan_step_zie);
-    pos_y = (1 + (0:N_scans_y-1) *scan_step_zie);
-    % centre this
-    pos_x  = pos_x - (mean(pos_x));
-    pos_y  = pos_y - (mean(pos_y));
-    [Y,X] = meshgrid(pos_x, pos_y);
-    ppX = X(:); % true posoition
-    ppY = Y(:);
-
-    ppX_recon_init = ppX;
-    ppY_recon_init = ppY;
-
-    %add random position errors - to simulate scan noise
-    ppX_recon_init = ppX_recon_init + maxPosError*(rand(size(ppX_recon_init))*2-1);
-    ppY_recon_init = ppY_recon_init + maxPosError*(rand(size(ppY_recon_init))*2-1);
-
-    %
-    disp('Generating diffraction patterns...')
-    %calculate indicies for all scans
-    N_scan = length(ppX);
-    %position = pi(integer) + pf(fraction)
-    py_i = round(ppY/dx);
-    py_f = ppY - py_i*dx;
-    px_i = round(ppX/dx);
-    px_f = ppX - px_i*dx;
-
-    ind_x_lb = px_i - floor(N/2) + ind_obj_center;
-    ind_x_ub = px_i + ceil(N/2) -1 + ind_obj_center;
-    ind_y_lb = py_i - floor(N/2) + ind_obj_center;
-    ind_y_ub = py_i + ceil(N/2) -1 + ind_obj_center;
-
+    
     dp = zeros(N,N,N_scan);
     dp_true = zeros(N,N,N_scan);
-
     snr = ones(N_scan,1)*inf; %signal-to-noise ratio of each diffraction pattern
 
     f = waitbar(0,'1','Name','Simulating diffraction patterns...',...
@@ -108,8 +112,8 @@ for j=1:2
         % Update waitbar and message
         waitbar(i/N_scan,f,sprintf('No.%d/%d',i,N_scan))
 
-        probe_s = shift(probe_true, dx, dx, px_f(i), py_f(i));
-        obj_roi = object_true(ind_y_lb(i):ind_y_ub(i),ind_x_lb(i):ind_x_ub(i));
+        probe_s = shift(probe_true, dx, dx, ph_f(i), pv_f(i));
+        obj_roi = object_true(ind_v_lb(i):ind_v_ub(i),ind_h_lb(i):ind_h_ub(i));
         psi =  obj_roi .* probe_s;
 
         %FFT to get diffraction pattern
@@ -138,8 +142,8 @@ for j=1:2
     h5create(fullfile(save_dir,save_name), '/dp', size(dp),'ChunkSize',[size(dp,1) size(dp,1), 1],'Deflate',4)
     h5write(fullfile(save_dir,save_name), '/dp', dp*100)
     save_name = strcat('data_roi0_para.hdf5'); %save scan positions
-    hdf5write(fullfile(save_dir,save_name), '/ppX', ppX)
-    hdf5write(fullfile(save_dir,save_name), '/ppY', ppY,'WriteMode','append')
+    hdf5write(fullfile(save_dir,save_name), '/ppX', pos_true_h)
+    hdf5write(fullfile(save_dir,save_name), '/ppY', pos_true_v,'WriteMode','append')
     disp('done')
 end
 
@@ -147,10 +151,10 @@ end
 template = 'ptycho_electron_simulation_template';
 % you can adjust more parameters in the template
 base_path_ptycho = fullfile(base_dir,data_dir); %base path needed by ptychoshelves
-grouping = N_scans_x; %adjust group size based on total # of diffraction patterns
+grouping = N_scans_h; %adjust group size based on total # of diffraction patterns
 run(template)
 
-%% Run the reconstruction
+% start reconstruction
 tic
 out = core.ptycho_recons(p);
 toc
