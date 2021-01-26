@@ -23,7 +23,7 @@ cen_dp = floor(Ndp/2)+1;
 Niter_refined = 0; % more refined reconstruction
 get_fsc_score = true;
 Niter_save_results = 100;
-Niter_plot_results = 50; % set to inf if you don't want any plots
+Niter_plot_results = 20; % set to inf if you don't want any plots
 %% General
 p = struct();
 p.   verbose_level = 2;                            % verbosity for standard output (0-1 for loops, 2-3 for testing and adjustments, >= 4 for debugging)
@@ -79,21 +79,6 @@ p.   prepare.force_preparation_data = true;                 % Prepare dataset ev
 p.   prepare.store_prepared_data = false;                    % store the loaded data to h5 even for non-external engines (i.e. other than c_solver)
 p.   prepare.prepare_data_function = '';                    % (used only if data should be prepared) custom data preparation function handle;
 p.   prepare.auto_center_data = false;                      % if matlab data preparator is used, try to automatically center the diffraction pattern to keep center of mass in center of diffraction
-
-p.   prealign_FP = false;                                   % use prealignment routines for Fourier Ptychography
-p.   prealign.asize = [1000 1000];                          % array size for the alignment procedure
-p.   prealign.crop_dft = 100;                               % crop the dftregistration input
-p.   prealign.prealign_data = true;                         % recalculate the alignment
-p.   prealign.axis = 1;                                     % alignment axis
-p.   prealign.type = {'round'};                             % alignment routine
-p.   prealign.numiter = 5;                                  % number of alignment iterations
-p.   prealign.rad_filt_min = 25e-6;                         % discard positions < rad_filt_min radius
-p.   prealign.rad_filt_max = 80e-6;                         % discard positions > rad_filt_max radius
-p.   prealign.load_alignment = true;                        % load alignment from an alignment_file
-p.   prealign.alignment_file = 'alignment_S00249.mat';      % alignment file
-p.   prealign.mag_est = 160;                                % estimated magnification; used as an initial guess for the distortion correction matrix
-p.   prealign.use_distortion_corr = true;                   % use distortion correction; if distortion_corr is empty, it will calculate a new correction based on the shifts retrieved from the alignment
-p.   prealign.distortion_corr = [];                         % distortion correction matrix; [161.3003, 3.4321, -6.7294, 0.0000, 0.9675, 2.0220, 0.0540];
 
 % Scan positions
 p.   src_positions = 'hdf5_pos_aps';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
@@ -329,7 +314,6 @@ eng.custom_data_flip = [0,0,0];         % apply custom flip of the data [fliplr,
 eng.apply_tilted_plane_correction = ''; % if any(p.sample_rotation_angles([1,2]) ~= 0),  this option will apply tilted plane correction. (a) 'diffraction' apply correction into the data, note that it is valid only for "low NA" illumination  Gardner, D. et al., Optics express 20.17 (2012): 19050-19059. (b) 'propagation' - use tilted plane propagation, (c) '' - will not apply any correction 
 
 %% added by YJ
-%eng.extension = {'fly_scan'};                    %arbitrary fly scan
 eng.plot_results_every = Niter_plot_results;
 eng.save_results_every = Niter_save_results;
 eng.save_phase_image = true;
@@ -446,4 +430,11 @@ if Niter_refined>0
     eng.extraPrintInfo = strcat('simulation-',num2str(p.scan_number));
 
     [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
+end
+%% Run the reconstruction
+caller = dbstack;
+if length(caller)==1
+    tic
+    out = core.ptycho_recons(p);
+    toc
 end
