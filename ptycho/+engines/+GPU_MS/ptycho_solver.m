@@ -548,7 +548,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         else
             fourier_error_out = Ggather(fourier_error);
         end
-        outputs.fourier_error_out = mean(fourier_error_out,2);
+        outputs.fourier_error_out = mean(fourier_error_out,2,'omitnan'); % omit nan by ZC
         %disp(outputs.fourier_error_out(1:4))
         %save the lastest error of all dp
         try
@@ -606,6 +606,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         outputs.relative_pixel_scale = self.modes{1}.scales;
         outputs.rotation =  self.modes{1}.rotation;
         outputs.shear =   self.modes{1}.shear;
+        outputs.asymmetry =   self.modes{1}.asymmetry; % added by ZC
         outputs.z_distance = self.modes{1}.distances;
 
         % 
