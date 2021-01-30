@@ -207,7 +207,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         fsc_score(end+1,1:size(aux,1), 1:size(aux,2)) = aux; 
     end   
     %% ADVANCED FLY SCAN. 
-    % disabled by YJ. seems redundant since it's already calculated init_solver.m .
+    % disabled by YJ. seems redundant since it's already calculated init_solver.m
     % probably useful with position correction?
     %{
     if  is_used(par, 'fly_scan')
@@ -538,7 +538,13 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         end
             
         % scan positions
-        outputs.probe_positions = self.modes{1}.probe_positions;
+        if is_used(par, 'fly_scan')
+            for ll=1:length(self.modes)
+                outputs.probe_positions(:,:,ll) = self.modes{ll}.probe_positions;
+            end
+        else
+            outputs.probe_positions = self.modes{1}.probe_positions;
+        end
         try %probe_positions_model may not exist if geom refinement is not enabled
             outputs.probe_positions_model = self.modes{1}.probe_positions_model;
         catch
