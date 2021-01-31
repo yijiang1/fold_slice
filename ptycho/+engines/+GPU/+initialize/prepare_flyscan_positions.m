@@ -39,8 +39,8 @@ import plotting.*
                     x_interp = (x(1)+ratio):1:(x(end)+ratio);
                     p_ub = p_lb + length(x)-1;
 
-                    pos_temp(p_lb:p_ub,1) = interp1(x,pos(p_lb:p_ub,1),x_interp,'pchip');
-                    pos_temp(p_lb:p_ub,2) = interp1(x,pos(p_lb:p_ub,2),x_interp,'pchip');  
+                    pos_temp(p_lb:p_ub,1) = interp1(x,pos(p_lb:p_ub,1),x_interp,'spline');
+                    pos_temp(p_lb:p_ub,2) = interp1(x,pos(p_lb:p_ub,2),x_interp,'spline');  
                     self.modes{ll}.probe_positions = pos_temp;
                     p_lb = p_ub+1;
                 end
@@ -68,8 +68,8 @@ import plotting.*
                     x = 1:size(pos,1);
                     x_interp = (x(1)+ratio):1:(x(end)+ratio);
 
-                    pos_temp(:,1) = interp1(x,pos(:,1),x_interp,'pchip');
-                    pos_temp(:,2) = interp1(x,pos(:,2),x_interp,'pchip');  
+                    pos_temp(:,1) = interp1(x,pos(:,1),x_interp,'spline');
+                    pos_temp(:,2) = interp1(x,pos(:,2),x_interp,'spline');  
                     self.modes{ll}.probe_positions(ind,:) = pos_temp;                    
                 end
                 %{
