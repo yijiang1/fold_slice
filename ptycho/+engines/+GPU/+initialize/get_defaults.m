@@ -97,6 +97,7 @@ function [param] = get_defaults
     % fly scans 
     param.flyscan_offset = 0; 
     param.flyscan_dutycycle = 1;
+    param.flyscan_intensity = 'varying';  % Added by YJ. Specify how to combine flyscan modes: 'varying' (default) or 'constant'.
     param.flyscan_trajectory = 'line';    % Added by YJ. Specify trajectory type for arbitrary-path fly-scan:
                                           %'line' (default): line scan with big jumps. 
                                           %'continuous': contiuous path. 

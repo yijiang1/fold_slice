@@ -142,9 +142,7 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
         if ~strcmp(par.likelihood, 'poisson')    % soft memory cleanup 
             mask = []; aPsi = []; noise = []; modF = [];  R=[];
         end
-       
 
-        
         if iter > par.estimate_NF_distance
             % update estimation of the nearfield propagation distance c
             [self, cache] = gradient_NF_propagation_solver(self,psi(:,end),chi, cache, g_ind);
@@ -163,7 +161,7 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
             end
         end
 
-    %%%%%%%%%%%% LSQ optimization code (probe & object updates)%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%% LSQ optimization code (probe & object updates) %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for layer = par.Nlayers:-1:1
         for ll = 1:max(par.probe_modes, par.object_modes)
             object_reconstruct = iter >= par.object_change_start && (par.apply_multimodal_update || is_used(par, 'fly_scan') || ll <= par.object_modes );
@@ -349,22 +347,24 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
     end
     
     %% FLY-SCAN: join all subprobes
-    if iter >= par.probe_change_start
-       if is_used(par,'fly_scan')
-           probe_new = 0;
-           for ll = 1:par.Nmodes
-               probe_new = probe_new + self.probe{ll}/par.Nmodes;
-           end
-           for ll = 1:par.Nmodes
-               % allow variation of the modes intensity 
-                aa = sum2(self.probe{ll} .* conj(probe_new));
-                bb = sum2(abs(probe_new).^2);     
-                proj(ll,1,:) = real(aa./ bb) ;
-                self.probe{ll} = proj(ll,1,:) .* probe_new;
-                
-                % assume constant intensity 
-                %self.probe{ll} =  probe_new;
-           end
+	if iter >= par.probe_change_start
+        if is_used(par,'fly_scan')
+            probe_new = 0;
+            for ll = 1:par.Nmodes
+                probe_new = probe_new + self.probe{ll}/par.Nmodes;
+            end
+            for ll = 1:par.Nmodes
+                switch par.flyscan_intensity
+                    case 'varying' % allow variation of the modes intensity 
+                        aa = sum2(self.probe{ll} .* conj(probe_new));
+                        bb = sum2(abs(probe_new).^2);
+                        %proj(ll,1,:) = real(aa./ bb); %seems no need to have proj
+                        %self.probe{ll} = proj(ll,1,:) .* probe_new;
+                        self.probe{ll} = real(aa./bb) .* probe_new;  
+                    case 'constant' % assume constant intensity 
+                        self.probe{ll} =  probe_new;
+                end
+            end
        end
     end
 %     if iter >= par.probe_change_start 
