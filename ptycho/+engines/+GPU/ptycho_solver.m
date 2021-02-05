@@ -131,6 +131,13 @@ if par.p.use_display
     	ptycho_plot_wrapper(self, par, 0)
     end
 end
+%% added by YJ: save initial probe (after init_solver.m's pre-processing)
+probe_temp = Ggather(self.probe{1});
+probe_init = zeros(size(probe_temp,1),size(probe_temp,2),par.probe_modes,par.variable_probe_modes+1);
+for ll = 1:par.probe_modes
+   probe_temp = Ggather(self.probe{ll});
+   probe_init(:,:,ll,:) = probe_temp(:,:,1,:);
+end
 %%
 for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     if iter == par.probe_position_search || iter==par.detector_scale_search+1 || iter == par.detector_rotation_search+1
@@ -378,11 +385,11 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         else
             %% orthogonalize the incoherent probe modes 
             for ii = 1:par.probe_modes
-                P(:,:,ii) = self.probe{ii}(:,:,1); 
+                P(:,:,ii) = self.probe{ii}(:,:,1);
             end
             P = core.probe_modes_ortho(P);
             for ii = 1:par.probe_modes
-                self.probe{ii}(:,:,1) = P(:,:,ii); 
+                self.probe{ii}(:,:,1) = P(:,:,ii);
             end
         end
     end
@@ -479,7 +486,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         probe_temp = Ggather(self.probe{1});
         probe = zeros(size(probe_temp,1),size(probe_temp,2),par.probe_modes,par.variable_probe_modes+1);
         for ll = 1:par.probe_modes
-           probe_temp =  Ggather(self.probe{ll});
+           probe_temp = Ggather(self.probe{ll});
            probe(:,:,ll,:) = probe_temp(:,:,1,:);
         end
         
@@ -563,8 +570,8 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         outputs.detector_rotation = self.modes{1}.probe_rotation(end,:);
         outputs.detector_scale = 1+self.modes{1}.probe_scale_upd(end);
         outputs.relative_pixel_scale = self.modes{1}.scales;
-        outputs.rotation =  self.modes{1}.rotation;
-        outputs.shear =   self.modes{1}.shear;
+        outputs.rotation = self.modes{1}.rotation;
+        outputs.shear = self.modes{1}.shear;
         outputs.asymmetry = self.modes{1}.asymmetry; % added by ZC
         outputs.z_distance = self.modes{1}.distances;
 
@@ -579,7 +586,25 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         p.detector.binning = false;
         p.dx_spec = self.pixel_size;
         p.lambda = self.lambda;
-        %save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','fourier_error_out','avgTimePerIter');
+        
+        % store initial object file if given by an external file
+        if ~isempty(par.p.initial_iterate_object_file{1})
+            p.init_object_file = par.p.initial_iterate_object_file;
+        end
+        % store initial position file
+        if ~isempty(par.p.scan.custom_positions_source)
+            p.init_position_file = par.p.scan.custom_positions_source;
+        end
+        % store initial probe
+        if ~isempty(par.p.initial_iterate_object_file) % if initial probe is given by a file
+        	p.init_probe_file = par.p.initial_probe_file;
+        end
+        if isfield(par.p,'normalize_init_probe')
+            p.normalize_init_probe = par.p.normalize_init_probe;
+        else
+            p.normalize_init_probe = true;
+        end
+        p.init_probe = probe_init; %store initial probe (after init_solver.m's pre-processing)
         
         save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object_roi','object');
         %% save object phase
