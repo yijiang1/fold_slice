@@ -589,7 +589,6 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         
         % store initial object file if given by an external file
         if ~isempty(par.p.initial_iterate_object_file{1})
-        	disp(par.p.initial_iterate_object_file)
             p.init_object_file = par.p.initial_iterate_object_file;
         end
         % store initial position file
