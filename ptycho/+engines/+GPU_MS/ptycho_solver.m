@@ -131,6 +131,13 @@ if par.p.use_display
     	ptycho_plot_wrapper(self, par, 0)
     end
 end
+%% added by YJ: save initial probe (after init_solver.m's pre-processing)
+probe_temp = Ggather(self.probe{1});
+probe_init = zeros(size(probe_temp,1),size(probe_temp,2),par.probe_modes,par.variable_probe_modes+1);
+for ll = 1:par.probe_modes
+   probe_temp = Ggather(self.probe{ll});
+   probe_init(:,:,ll,:) = probe_temp(:,:,1,:);
+end
 %%
 for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     if iter == par.probe_position_search || iter==par.detector_scale_search+1 || iter == par.detector_rotation_search+1
@@ -624,7 +631,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         if par.amplitude_threshold_object<inf
             p.reg.amplitude_threshold_object = par.amplitude_threshold_object;
         end
-        
+
         % store parameters related to multi-slice
         p.multi_slice_param.z_distance = self.z_distance;
         p.multi_slice_param.regularize_layers = par.regularize_layers;
@@ -639,11 +646,25 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         p.obj_init_param.init_layer_append_mode = par.init_layer_append_mode;
         p.obj_init_param.init_layer_scaling_factor = par.init_layer_scaling_factor;
         if ~isempty(par.p.initial_iterate_object_file) % if initial object is from a given file
-        	p.obj_init_param.init_object_file = par.p.initial_iterate_object_file;
+        	p.init_object_file = par.p.initial_iterate_object_file;
             if isfield(par.p,'multiple_layers_obj')
                 p.obj_init_param.multiple_layers_obj = par.p.multiple_layers_obj;
             end
         end
+        % store initial position file
+        if ~isempty(par.p.scan.custom_positions_source)
+            p.init_position_file = par.p.scan.custom_positions_source;
+        end
+        % store initial probe
+        if ~isempty(par.p.initial_iterate_object_file) % if initial probe is given by a file
+        	p.init_probe_file = par.p.initial_probe_file;
+        end
+        if isfield(par.p,'normalize_init_probe')
+            p.normalize_init_probe = par.p.normalize_init_probe;
+        else
+            p.normalize_init_probe = true;
+        end
+        p.init_probe = probe_init; %store initial probe (after init_solver.m's pre-processing)
         
         save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object_roi','object');
         %% save object phase
