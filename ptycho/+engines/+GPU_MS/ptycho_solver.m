@@ -471,7 +471,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
                 hold all
                 for ll = 1:par.Nmodes    
                     plot(self.modes{ll}.probe_fourier_shift)
-                end    
+                end
                 hold off
                 grid on 
                 axis tight
@@ -533,19 +533,16 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         probe_temp = Ggather(self.probe{1});
         probe = zeros(size(probe_temp,1),size(probe_temp,2),par.probe_modes,par.variable_probe_modes+1);
         for ll = 1:par.probe_modes
-           probe_temp =  Ggather(self.probe{ll});
+           probe_temp = Ggather(self.probe{ll});
            probe(:,:,ll,:) = probe_temp(:,:,1,:);
         end
-               
+        
         object_temp = Ggather(self.object{1});
         object = zeros(size(object_temp,1),size(object_temp,2),par.Nlayers);
-        object_roi_temp = object_temp(cache.object_ROI{:});
-        object_roi = zeros(size(object_roi_temp,1),size(object_roi_temp,2),par.Nlayers);
         
         for ll = 1:par.Nlayers %for multislice recon
         	object_temp = Ggather(self.object{ll});
         	object(:,:,ll) = object_temp(:,:,1,1);
-            object_roi(:,:,ll) = object_temp(cache.object_ROI{:});
         end
         
         % data error
@@ -556,7 +553,6 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
             fourier_error_out = Ggather(fourier_error);
         end
         outputs.fourier_error_out = mean(fourier_error_out,2,'omitnan'); % omit nan by ZC
-        %disp(outputs.fourier_error_out(1:4))
         %save the lastest error of all dp
         try
             iter_error = find(~isnan(mean(fourier_error_out,2)));
@@ -622,6 +618,8 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         
         % additional parameter for PSI's IO code
         p = {};
+        p.object_ROI{1} = cache.object_ROI{1};
+        p.object_ROI{2} = cache.object_ROI{2};
         p.binning = false;
         p.detector.binning = false;
         p.dx_spec = self.pixel_size;
@@ -645,18 +643,18 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         p.obj_init_param.init_layer_interp = par.init_layer_interp;
         p.obj_init_param.init_layer_append_mode = par.init_layer_append_mode;
         p.obj_init_param.init_layer_scaling_factor = par.init_layer_scaling_factor;
-        if ~isempty(par.p.initial_iterate_object_file{1}) % if initial object is from a given file
+        if isfield(par.p,'initial_iterate_object_file') && ~isempty(par.p.initial_iterate_object_file{1}) % if initial object is from a given file
         	p.init_object_file = par.p.initial_iterate_object_file;
             if isfield(par.p,'multiple_layers_obj')
                 p.obj_init_param.multiple_layers_obj = par.p.multiple_layers_obj;
             end
         end
         % store initial position file
-        if ~isempty(par.p.scan.custom_positions_source)
+        if isfield(par.p.scan,'custom_positions_source') && ~isempty(par.p.scan.custom_positions_source)
             p.init_position_file = par.p.scan.custom_positions_source;
         end
         % store initial probe
-        if ~isempty(par.p.initial_iterate_object_file) % if initial probe is given by a file
+        if isfield(par.p,'initial_probe_file') && ~isempty(par.p.initial_probe_file) % if initial probe is given by a file
         	p.init_probe_file = par.p.initial_probe_file;
         end
         if isfield(par.p,'normalize_init_probe')
@@ -664,9 +662,11 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         else
             p.normalize_init_probe = true;
         end
-        p.init_probe = probe_init; %store initial probe (after init_solver.m's pre-processing)
+        if par.save_init_probe
+            p.init_probe = probe_init; %store initial probe (after init_solver.m's pre-processing)
+        end
         
-        save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object_roi','object');
+        save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object');
         %% save object phase
         if isfield(par,'save_phase_image') && par.save_phase_image
             %%
@@ -695,14 +695,19 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
                 t.write(uint16(mat2gray(O_phase_roi)*2^16));
                 t.close();
                 %}
-            O_phase_roi = zeros(size(object_roi,1),size(object_roi,2)*par.Nlayers);
-
+            
+            object_temp = Ggather(self.object{1});
+            object_roi_temp = object_temp(cache.object_ROI{:});        
+            O_phase_roi = zeros(size(object_roi_temp,1), size(object_roi_temp,2)*par.Nlayers);
+            
             for ll=1:par.Nlayers
+                object_temp = Ggather(self.object{ll});
+                object_roi = object_temp(cache.object_ROI{:});
                 x_lb = (ll-1)*size(object_roi,2)+1;
                 x_ub = ll* size(object_roi,2);
-                O_phase_roi(:,x_lb:x_ub) = phase_unwrap(angle(object_roi(:,:,ll)));
+                O_phase_roi(:,x_lb:x_ub) = phase_unwrap(angle(object_roi));
             end
-
+            
             saveName = strcat('O_phase_roi_Niter',num2str(iter),'.tiff');
             saveDir = strcat(par.fout,'/O_phase_roi/');
             if ~exist(saveDir, 'dir')
