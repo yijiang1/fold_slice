@@ -118,4 +118,7 @@ function [param] = get_defaults
     % convergence check - stop reconstruction if fourier error is larger than the previous one by given (relative) threshold. 
     param.fourier_error_threshold = inf; % default: no convergence check.
 
+    % I/O
+    param.save_init_probe = false;       % Added by YJ. If true, save initial probe function in the .mat output file. Default is false.
+    
 end
