@@ -81,7 +81,7 @@ p.   prepare.prepare_data_function = '';                    % (used only if data
 p.   prepare.auto_center_data = false;                      % if matlab data preparator is used, try to automatically center the diffraction pattern to keep center of mass in center of diffraction
 
 % Scan positions
-p.   src_positions = 'hdf5_pos_aps';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
+p.   src_positions = 'hdf5_pos';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
 p.   positions_file = [''];    %Filename pattern for position files, Example: ['../../specES1/scan_positions/scan_%05d.dat']; (the scan number will be automatically filled in)
 
 p.   spec.motor.fine_motors = {};                           % Y and X motor name for positions, leave empty for defaults
@@ -89,8 +89,8 @@ p.   spec.motor.fine_motors_scale = [];                     % ptycho expects rea
 p.   spec.motor.coarse_motors = {};                         % Coarse sample position for shared object, use {X-motor, Y-motor} 
 p.   spec.motor.coarse_motors_scale = [];                   % Scale of the coarse motors (to scale the provided values to meters)
 
-% scan parameters for option src_positions = 'matlab_pos';
-p.   scan.type = 'custom';                                  % {'round', 'raster', 'round_roi', 'custom'}
+% scan parameters for option src_positions = 'matlab_pos' or 'hdf5_pos';
+p.   scan.type = 'default';                                  % {'round', 'raster', 'round_roi', 'custom'}
 p.   scan.roi_label = roi_label;                            % For APS data
 p.   scan.format = scan_string_format;                      % For APS data format for scan directory generation
 %%% PSI %%% 
