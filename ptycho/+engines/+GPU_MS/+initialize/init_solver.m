@@ -462,7 +462,7 @@ function [self, cache] = init_solver(self,par)
                     [N_obj_y,N_obj_x,N_obj_z] = size(obj_temp); 
                     [X,Y,Z] = meshgrid(linspace(1,N_obj_x,N_obj_x),linspace(1,N_obj_y,N_obj_y),linspace(1,N_obj_z,N_obj_z));
                     [Xq,Yq,Zq] = meshgrid(linspace(1,N_obj_x,N_obj_x),linspace(1,N_obj_y,N_obj_y),par.init_layer_interp);
-                    obj_temp = interp3(X,Y,Z,obj_temp,Xq,Yq,Zq,'spline');	                    obj_temp_ph = angle(obj_temp);
+                    obj_temp = interp3(X,Y,Z,obj_temp,Xq,Yq,Zq,'spline');
                     for jj=1:size(obj_temp,3)
                         self.object{ll,jj} = obj_temp(:,:,jj);
                     end
