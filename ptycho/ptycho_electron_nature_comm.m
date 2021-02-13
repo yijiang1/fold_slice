@@ -90,8 +90,6 @@ p.   prepare.auto_center_data = false;                      % if matlab data pre
 
 % Scan positions
 p.   src_positions = 'matlab_pos';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
-%p.   src_positions = 'hdf5_pos_cu';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
-
 p.   positions_file = [''];    %Filename pattern for position files, Example: ['../../specES1/scan_positions/scan_%05d.dat']; (the scan number will be automatically filled in)
 
 p.   spec.motor.fine_motors = {};                           % Y and X motor name for positions, leave empty for defaults

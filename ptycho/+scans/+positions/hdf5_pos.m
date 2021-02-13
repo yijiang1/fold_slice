@@ -1,38 +1,26 @@
-%hdf5_pos_aps loads APS' data positions from hdf5 files (generated from python
-%script)
+%hdf5_pos loads ptycho scan positions from hdf5 files 
 %Written by YJ
 
-function [ p ] = hdf5_pos_cu( p )
+function [ p ] = hdf5_pos( p )
 
 for ii = 1:p.numscans
-    positions_real = zeros(0,2); 
-
     switch p.scan.type
-        case 'custom'
-            if isempty(p.scan.custom_positions_source) %guess the position file name from base path
-                %pos_file = strcat(p.base_path,sprintf(p.scan.format, p.scan_number(ii)),'/data_position.hdf5');                
-                pos_file = strcat(p.base_path,sprintf(p.scan.format, p.scan_number(ii)),'/data_roi',p.scan.roi_label,'_para.hdf5');   
-
-            end
+        case 'default'
+            pos_file = strcat(p.base_path,sprintf(p.scan.format, p.scan_number(ii)),'/data_roi',p.scan.roi_label,'_para.hdf5');   
             if exist(pos_file,'file')
-                try
-            	    ps = h5read(pos_file,'/probe_positions_0');
-                    ppX = ps(:,1);
-                    ppY = ps(:,2);
-                catch
-                    ppX = h5read(pos_file,'/ppX');
-                    ppY = h5read(pos_file,'/ppY');
-                    ppX = ppX(:);
-                    ppY = ppY(:);
-                end
+                ppX = h5read(pos_file,'/ppX');
+                ppY = h5read(pos_file,'/ppY');
+                ppX = ppX(:);
+                ppY = ppY(:);
                 positions_real = zeros(length(ppX),2); 
 
-                positions_real(:,1) = -ppY(:);
-                positions_real(:,2) = -ppX(:);                
+                positions_real(:,1) = -ppY;
+                positions_real(:,2) = -ppX;                
             else
-            	error('Could not find function or data file %s', p.src_positions);
+                disp(strcat(p.base_path,sprintf(p.scan.format, p.scan_number(ii)),'/data_roi',p.scan.roi_label,'_para.hdf5'))
+            	error('Could not find function or data file %s', pos_file);
             end
-        case 'pre_recon'
+        case 'custom'
             if ~isempty(p.scan.custom_positions_source) %guess the position file name from base path
                 pos_file = p.scan.custom_positions_source;
             else
@@ -52,12 +40,11 @@ for ii = 1:p.numscans
                 positions_real(:,2) = -ppX;                
             catch
                 error('Failed to load positions from %s', pos_file);
-            end    
+            end
         otherwise
             error('Unknown scan type %s.', p.scan.type);
     end
-    disp('Loaded scan positions from')
-    disp(pos_file)
+    utils.verbose(2, strcat('Loaded scan positions from:', pos_file))
     p.numpts(ii) = size(positions_real,1);
     p.positions_real = [p.positions_real ; positions_real]; %append position
 end
