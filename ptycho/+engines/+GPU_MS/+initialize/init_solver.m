@@ -552,9 +552,15 @@ function [self, cache] = init_solver(self,par)
     if par.init_layer_scaling_factor~=1
         verbose(0,'Rescale each layer by %f', par.init_layer_scaling_factor)
     end
-    for j = 1:par.Nlayers  
+    for j = 1:par.Nlayers
         for i = 1:max(1, par.Nscans * ~par.share_object) % loop over scans
-            object{i,j} = self.object{min(end,i),j}*par.init_layer_scaling_factor;
+            if par.init_layer_scaling_factor~=1
+                object_temp = self.object{min(end,i),j};
+                object_temp_ph = phase_unwrap(angle(object_temp))*par.init_layer_scaling_factor;
+                object{i,j} = abs(object_temp).*exp(1i.*object_temp_ph);
+            else
+                object{i,j} = self.object{min(end,i),j};
+            end
         end
     end
     
