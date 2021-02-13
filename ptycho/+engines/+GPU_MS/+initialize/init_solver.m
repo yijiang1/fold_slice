@@ -462,17 +462,9 @@ function [self, cache] = init_solver(self,par)
                     [N_obj_y,N_obj_x,N_obj_z] = size(obj_temp); 
                     [X,Y,Z] = meshgrid(linspace(1,N_obj_x,N_obj_x),linspace(1,N_obj_y,N_obj_y),linspace(1,N_obj_z,N_obj_z));
                     [Xq,Yq,Zq] = meshgrid(linspace(1,N_obj_x,N_obj_x),linspace(1,N_obj_y,N_obj_y),par.init_layer_interp);
-                    obj_temp_mag = abs(obj_temp);
-                    obj_temp_ph = angle(obj_temp);
-                    for i=1:size(obj_temp_ph,3) %unwrap phase just in case
-                        obj_temp_ph(:,:,i) = phase_unwrap(obj_temp_ph(:,:,i));
-                    end
-                    % interpolate phase and magnitude separately
-                    obj_temp_ph = interp3(X,Y,Z,obj_temp_ph,Xq,Yq,Zq,'spline');
-                    obj_temp_mag = interp3(X,Y,Z,obj_temp_mag,Xq,Yq,Zq,'spline');
-
-                    for jj=1:size(obj_temp_ph,3)
-                        self.object{ll,jj} = obj_temp_mag(:,:,jj).*exp(1i.*obj_temp_ph(:,:,jj));
+                    obj_temp = interp3(X,Y,Z,obj_temp,Xq,Yq,Zq,'spline');	                    obj_temp_ph = angle(obj_temp);
+                    for jj=1:size(obj_temp,3)
+                        self.object{ll,jj} = obj_temp(:,:,jj);
                     end
                 end
             end
@@ -560,7 +552,7 @@ function [self, cache] = init_solver(self,par)
     if par.init_layer_scaling_factor~=1
         verbose(0,'Rescale each layer by %f', par.init_layer_scaling_factor)
     end
-    for j = 1:par.Nlayers  
+    for j = 1:par.Nlayers
         for i = 1:max(1, par.Nscans * ~par.share_object) % loop over scans
             if par.init_layer_scaling_factor~=1
                 object_temp = self.object{min(end,i),j};
