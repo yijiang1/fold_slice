@@ -36,7 +36,6 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
             object_upd_sum{ll,layer} = Gzeros(self.Np_o, true);
         end
     end
-    %disp(size(self.probe))
 
     probe_update_sum = Gzeros(size(self.probe{1})); 
     probe_amp_corr = [0,0]; 
@@ -56,7 +55,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         scan_ids = cache.preloaded_indices_compact{1}.scan_ids;
     end
     Nind = length(indices);
-
+    %disp(Nind)
     for jj = 1:Nind
          layer_ids{jj} = 1:par.Nlayers; 
     end
@@ -115,7 +114,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
 
         % get intensity (modulus) on detector including different corrections
         [aPsi, ~, cache, self] = get_reciprocal_model(self, psi, modF, mask,iter, g_ind, par, cache);
-            
+
         %%%%%%%%%%%%%%%%%%%%%%% LINEAR MODEL CORRECTIONS END %%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%            
         if iter > 0 && (verbose >= -1 || par.number_iterations > par.plot_results_every) && ... 
                 ((mod(iter,min(20, 2^(floor(2+iter/50)))) == 0 || iter < 10) ...
@@ -123,6 +122,8 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
             % calculate only sometimes to make it faster
             [fourier_error(iter,g_ind)] = get_fourier_error(modF, aPsi, noise,mask, par.likelihood);
             if any(~isfinite(fourier_error(iter,g_ind)))
+                %disp(any(~isfinite(fourier_error(iter,g_ind))))
+
                 if par.accelerated_gradients_start < par.number_iterations || par.momentum > 0
                     error('Convergence failed, error contains NaNs, quitting ... \n%s',  'If repeated, try to set eng.accelerated_gradients_start = inf or eng.momentum = 0;  ')
                 else 
@@ -130,6 +131,10 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
                 end
             end
         end
+        %if iter>0
+        %    disp(size(fourier_error(iter,g_ind)))
+            %disp(any(~isfinite(fourier_error(iter,g_ind))))
+        %end
         
         if strcmp(par.likelihood, 'poisson')   || iter == 0
             [chi,R] = modulus_constraint(modF,aPsi,psi, mask, noise, par, 1);
@@ -146,7 +151,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         if ~strcmp(par.likelihood, 'poisson')    % soft memory cleanup 
             mask = []; aPsi = []; noise = []; modF = [];  R=[];
         end
-       
+        %disp(size(psi(:,end)))
         if iter > par.estimate_NF_distance
             % update estimation of the nearfield propagation distance 
             [self, cache] = gradient_NF_propagation_solver(self,psi(:,end),chi, cache, g_ind);
@@ -165,164 +170,156 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
                 chi{ll} = chi{ll} .*  beta_xi ;
             end
         end
-                
-        %% multilayer but not count final inf layer, then an additional farfield
-        % fft needed, Added by ZC
-        if par.Nlayers > 1 && isinf(self.z_distance(end)) && length(self.z_distance) > par.Nlayers
-           for ll= 1:max(par.object_modes, par.probe_modes)
-               chi{ll} = ifft2_safe(chi{ll});  % fully farfield inverse fft
-           end
+        
+        % At this point, chi is at the far-field (detector) plane
+        % Now propagate chi back to the last object layer 
+        % This is same as using back_fourier_proj w. distance = inf and no camera angle refinement 
+        for ll= 1:max(par.object_modes, par.probe_modes)
+        	chi{ll} = ifft2_safe(chi{ll});  % fully farfield inverse fft
         end
-    
-    %% %%%%%%%%%% LSQ optimization code (probe & object updates)%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    for layer = par.Nlayers:-1:1
-        for ll = 1:max(par.probe_modes, par.object_modes)
-            object_reconstruct = iter >= par.object_change_start && (par.apply_multimodal_update || is_used(par, 'fly_scan') || ll <= par.object_modes );
-            probe_reconstruct = iter >= par.probe_change_start;
-            
-            llo = min(par.object_modes, ll);
-            llp = min(par.probe_modes, ll);
+        
+        %% %%%%%%%%%% LSQ optimization code (probe & object updates)%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        for layer = par.Nlayers:-1:1
+            for ll = 1:max(par.probe_modes, par.object_modes)
+                object_reconstruct = iter >= par.object_change_start && (par.apply_multimodal_update || is_used(par, 'fly_scan') || ll <= par.object_modes );
+                probe_reconstruct = iter >= par.probe_change_start;
 
-            % propagate to the previous layer
-            chi{ll} = back_fourier_proj(chi{ll}, self.modes{layer},g_ind);
-
-            if layer ~=  par.Nlayers 
-                % if only single layer is used, reuse obj_proj already
-                % loaded, but avoid storing obj_proj for each layer, rather load it again 
-                obj_proj{llo} = get_views(self.object, obj_proj{llo},layer_ids{jj}(layer),llo, g_ind, cache, scan_ids{jj},[]);
-            end
-            
-            % get update directions for each scan positions 
-            if ( probe_reconstruct || layer > 1) && object_reconstruct
-                [probe_update, object_update_proj] = Gfun(@get_update_both, chi{ll}, obj_proj{llo}, probe{llp,layer});
-            elseif ( probe_reconstruct || layer > 1)
-                probe_update       = Gfun(@get_update, chi{ll}, obj_proj{llo});
-                object_update_proj = 0;
-            else
-                probe_update       = 0; m_probe_update = 0;
-                object_update_proj = Gfun(@get_update, chi{ll}, probe{llp,layer});
-            end
-            
-            % refine single optimal probe update direction (use overlap constraint)
-            if probe_reconstruct || layer > 1
-               [self,m_probe_update, probe_update, cache]  = refine_probe_update(self, obj_proj{llo}, probe_update, chi{ll},layer,ll,p_ind{ll},g_ind, par, cache);
-            end
-            if layer == 1
-               probe_update = [] ; % soft memory clean 
-            end
-           
-            % refine single optimal object update direction (use overlap constraint)
-            if object_reconstruct
-                [object_upd_sum,object_update_proj, cache] = refine_object_update(self,  ...
-                    object_update_proj,object_upd_sum,layer_ids{jj}(layer),scan_ids{jj},g_ind, par, cache);
-            end
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%%%%  calculate the optimal step %%%%%%%%%%%%%%%%%%%%%%
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if  ll == 1   % && layer == par.Nlayers
-                if par.beta_LSQ > 0 && object_reconstruct && probe_reconstruct && par.Nlayers == 1  % for Nlayers > 1 seems to be better to better using gradient_projection_solver in order to keep behaviour the same for each layer !!
-                    % calculate the optimal step using LSQ method 
-                    [beta_probe(g_ind,layer), beta_object(g_ind,layer)] = ...
-                        get_optimal_LSQ_step(self,chi{ll},object_update_proj,m_probe_update,obj_proj{llo},probe{llp,layer},p_ind{ll} , par); 
-                        
-                elseif par.beta_LSQ > 0 && (object_reconstruct || probe_reconstruct )
-                    % computationally cheaper method that assumes only
-                    % diagonal terms of the AA matrix 
-                    [beta_probe(g_ind,layer),beta_object(g_ind,layer)] = ...
-                        gradient_projection_solver(self,chi{ll},obj_proj{llo},probe{llp,layer},...
-                            object_update_proj, m_probe_update,p_ind{ll}, par, cache); 
-                elseif par.beta_LSQ == 0
-                    % use constant step 
-                    beta_probe(g_ind,layer)  = par.beta_probe;
-                    beta_object(g_ind,layer)  = par.beta_object;
+                llo = min(par.object_modes, ll);
+                llp = min(par.probe_modes, ll);
+                
+                % propagate to the previous layer
+                if layer < par.Nlayers
+                    chi{ll} = back_fourier_proj(chi{ll}, self.modes{layer},g_ind);
                 end
                 
-                beta_object(g_ind,layer) =  beta_object(g_ind,layer) / par.Nlayers;
-                
-                if (is_used(par, 'fly_scan') || par.apply_multimodal_update)
-                     beta_object(g_ind,layer) =  beta_object(g_ind,layer) / par.probe_modes;
-                end
-            end
-            object_update_proj = [];   % soft memory clean 
-            beta_object = max(0, beta_object); 
-            beta_probe  = max(0, beta_probe); 
-            
-            if any(jj == ind_range(end)) && ll == 1   
-               %  show the optimal steps calculation 
-%                if verbose() > 2
-%                     if mod(iter, 5) == 0
-%                         plotting.smart_figure(121122)
-%                         plot(squeeze(real(beta_object)))
-%                         hold all 
-%                         plot(squeeze(real(beta_probe)))
-%                         hold off 
-%                         legend({'O', 'P'})
-%                         title('Update step for each scan position')
-%                         xlabel('Scan positions #')
-%                         ylabel('Step')
-%                         drawnow
-%                     end
-%                end
-               verbose(1,'Average step p%i: %3.3g  o%i: %3.3g layer %i', llp,mean(beta_probe(g_ind,layer)),llo,mean(beta_object(g_ind,layer)), layer);
-            end
-
-            %%%%%%%%%%%%%%% apply update with the optimal LSQ step %%%%%%%%%%%%%%%%%
-            if probe_reconstruct && layer == 1 && ll <= max(par.probe_modes)    % multilayer extension -> update probe only from the first layer
-                self.probe{ll} = update_probe(self.probe{ll}, m_probe_update, par, p_ind{ll}, g_ind, beta_probe, Nind); % finally update also the probe                   
-            end
-            %disp(size(self.probe))
-
-            if object_reconstruct && is_method(par, 'MLs') 
-                self.object = update_object(self, self.object, object_upd_sum, layer_ids{jj}(layer), llo, {g_ind}, scan_ids(jj), par, cache, beta_object);
-                %{
-                % quick fix for large object, by Zhen Chen
-                if iter <= 100 && par.Nlayers > 1
-                    temp=abs(self.object{layer_ids{jj}(layer)});
-                    temp(abs(temp-1)>0.1) = 1.0;
-                    self.object{layer_ids{jj}(layer)} = temp .* exp(1i* angle(self.object{layer_ids{jj}(layer)}));
-                end
-                %}
-            end
-            % Added by ZC. allow user to specify layer for position corr.
-            if ~isfield(par,'layer4pos') || isempty(par.layer4pos) 
-                par.layer4pos = ceil(par.Nlayers/2);
-            end
-            if  ll == 1  &&  layer == par.layer4pos %layer == ceil(par.Nlayers/2)  % assume that sample in center is best constrained . Changed to variable layer by Zhen Chen
-                %%%%%%%%%%%%% update other parameters of the ptychography model
-                if  iter >= par.probe_position_search || iter >= par.detector_rotation_search || iter >= par.detector_scale_search
-                    % find optimal position shift that minimize chi{1} in current iteration 
-                    [pos_update, pos_rotate_upd,probe_scale_upd, cache] = gradient_position_solver(self, chi{1}, obj_proj{1},probe{1,layer}, g_ind, iter, cache, par);
-                    self.modes{1}.probe_scale_upd(end+1)=self.modes{1}.probe_scale_upd(end)+mean(probe_scale_upd); 
-                    self.modes{1}.probe_positions(g_ind,:)=self.modes{1}.probe_positions(g_ind,:)+pos_update;
-                    self.modes{1}.probe_rotation_all(g_ind)=self.modes{1}.probe_rotation_all(g_ind)+squeeze(pos_rotate_upd);
+                if layer ~= par.Nlayers 
+                    % if only single layer is used, reuse obj_proj already
+                    % loaded, but avoid storing obj_proj for each layer, rather load it again 
+                    obj_proj{llo} = get_views(self.object, obj_proj{llo},layer_ids{jj}(layer),llo, g_ind, cache, scan_ids{jj},[]);
                 end
 
-                if iter > par.probe_fourier_shift_search 
-                    % search position corrections in the Fourier space, use
-                    % only informatiom from the first mode, has to be after
-                    % the probes updated , SEARCH ONLY FOR THE FIRST MODE 
-                    self.modes{1} = gradient_fourier_position_solver(chi{1}, obj_proj{1},probe{1,layer},self.modes{1}, g_ind);
+                % get update directions for each scan positions 
+                if ( probe_reconstruct || layer > 1) && object_reconstruct
+                    [probe_update, object_update_proj] = Gfun(@get_update_both, chi{ll}, obj_proj{llo}, probe{llp,layer});
+                elseif ( probe_reconstruct || layer > 1)
+                    probe_update       = Gfun(@get_update, chi{ll}, obj_proj{llo});
+                    object_update_proj = 0;
+                else
+                    probe_update       = 0; m_probe_update = 0;
+                    object_update_proj = Gfun(@get_update, chi{ll}, probe{llp,layer});
                 end
-            end
-            
-            if par.Nlayers > 1
-                % get update direction for the next layer 
-                 chi{ll} = probe_update; % .* median(beta_probe(g_ind,layer));  
-            else
-                 chi{ll} = []; % soft memory clean 
-            end
-        end 
-    end
 
-         if iter > par.estimate_NF_distance
+                % refine single optimal probe update direction (use overlap constraint)
+                if probe_reconstruct || layer > 1
+                   [self,m_probe_update, probe_update, cache]  = refine_probe_update(self, obj_proj{llo}, probe_update, chi{ll},layer,ll,p_ind{ll},g_ind, par, cache);
+                end
+                if layer == 1
+                   probe_update = [] ; % soft memory clean 
+                end
+
+                % refine single optimal object update direction (use overlap constraint)
+                if object_reconstruct
+                    [object_upd_sum,object_update_proj, cache] = refine_object_update(self,  ...
+                        object_update_proj,object_upd_sum,layer_ids{jj}(layer),scan_ids{jj},g_ind, par, cache);
+                end
+
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%%%%  calculate the optimal step %%%%%%%%%%%%%%%%%%%%%%
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                if  ll == 1   % && layer == par.Nlayers
+                    if par.beta_LSQ > 0 && object_reconstruct && probe_reconstruct && par.Nlayers == 1  % for Nlayers > 1 seems to be better using gradient_projection_solver in order to keep behaviour the same for each layer !!
+                        % calculate the optimal step using LSQ method 
+                        [beta_probe(g_ind,layer), beta_object(g_ind,layer)] = ...
+                            get_optimal_LSQ_step(self,chi{ll},object_update_proj,m_probe_update,obj_proj{llo},probe{llp,layer},p_ind{ll} , par); 
+
+                    elseif par.beta_LSQ > 0 && (object_reconstruct || probe_reconstruct )
+                        % computationally cheaper method that assumes only
+                        % diagonal terms of the AA matrix 
+                        [beta_probe(g_ind,layer),beta_object(g_ind,layer)] = ...
+                            gradient_projection_solver(self,chi{ll},obj_proj{llo},probe{llp,layer},...
+                                object_update_proj, m_probe_update,p_ind{ll}, par, cache); 
+                    elseif par.beta_LSQ == 0
+                        % use constant step 
+                        beta_probe(g_ind,layer)  = par.beta_probe;
+                        beta_object(g_ind,layer)  = par.beta_object;
+                    end
+
+                    beta_object(g_ind,layer) =  beta_object(g_ind,layer) / par.Nlayers;
+
+                    if (is_used(par, 'fly_scan') || par.apply_multimodal_update)
+                         beta_object(g_ind,layer) =  beta_object(g_ind,layer) / par.probe_modes;
+                    end
+                end
+                object_update_proj = [];   % soft memory clean 
+                beta_object = max(0, beta_object); 
+                beta_probe  = max(0, beta_probe); 
+
+                if any(jj == ind_range(end)) && ll == 1   
+                   %  show the optimal steps calculation 
+    %                if verbose() > 2
+    %                     if mod(iter, 5) == 0
+    %                         plotting.smart_figure(121122)
+    %                         plot(squeeze(real(beta_object)))
+    %                         hold all 
+    %                         plot(squeeze(real(beta_probe)))
+    %                         hold off 
+    %                         legend({'O', 'P'})
+    %                         title('Update step for each scan position')
+    %                         xlabel('Scan positions #')
+    %                         ylabel('Step')
+    %                         drawnow
+    %                     end
+    %                end
+                   verbose(1,'Average step p%i: %3.3g  o%i: %3.3g layer %i', llp,mean(beta_probe(g_ind,layer)),llo,mean(beta_object(g_ind,layer)), layer);
+                end
+
+                %%%%%%%%%%%%%%% apply update with the optimal LSQ step %%%%%%%%%%%%%%%%%
+                if probe_reconstruct && layer == 1 && ll <= max(par.probe_modes)    % multilayer extension -> update probe only from the first layer
+                    self.probe{ll} = update_probe(self.probe{ll}, m_probe_update, par, p_ind{ll}, g_ind, beta_probe, Nind); % finally update also the probe                   
+                end
+
+                if object_reconstruct && is_method(par, 'MLs') 
+                    self.object = update_object(self, self.object, object_upd_sum, layer_ids{jj}(layer), llo, {g_ind}, scan_ids(jj), par, cache, beta_object);
+                end
+                % Added by ZC. allow user to specify layer for position corr.
+                if ~isfield(par,'layer4pos') || isempty(par.layer4pos) 
+                    par.layer4pos = ceil(par.Nlayers/2);
+                end
+                if  ll == 1  &&  layer == par.layer4pos %layer == ceil(par.Nlayers/2)  % assume that sample in center is best constrained . Changed to variable layer by Zhen Chen
+                    %%%%%%%%%%%%% update other parameters of the ptychography model
+                    if  iter >= par.probe_position_search || iter >= par.detector_rotation_search || iter >= par.detector_scale_search
+                        % find optimal position shift that minimize chi{1} in current iteration 
+                        [pos_update, pos_rotate_upd,probe_scale_upd, cache] = gradient_position_solver(self, chi{1}, obj_proj{1},probe{1,layer}, g_ind, iter, cache, par);
+                        self.modes{1}.probe_scale_upd(end+1)=self.modes{1}.probe_scale_upd(end)+mean(probe_scale_upd); 
+                        self.modes{1}.probe_positions(g_ind,:)=self.modes{1}.probe_positions(g_ind,:)+pos_update;
+                        self.modes{1}.probe_rotation_all(g_ind)=self.modes{1}.probe_rotation_all(g_ind)+squeeze(pos_rotate_upd);
+                    end
+
+                    if iter > par.probe_fourier_shift_search 
+                        % search position corrections in the Fourier space, use
+                        % only informatiom from the first mode, has to be after
+                        % the probes updated , SEARCH ONLY FOR THE FIRST MODE 
+                        self.modes{1} = gradient_fourier_position_solver(chi{1}, obj_proj{1},probe{1,layer},self.modes{1}, g_ind);
+                    end
+                end
+
+                if par.Nlayers > 1
+                    % get update direction for the next layer 
+                     chi{ll} = probe_update; % .* median(beta_probe(g_ind,layer));  
+                else
+                     chi{ll} = []; % soft memory clean 
+                end
+            end 
+        end
+
+        if iter > par.estimate_NF_distance
             %% correct propagation distance if updated
             for i = 1:par.Nlayers %par.Nmodes % layers by Zhen Chen   
                 ASM = exp( self.modes{i}.distances(end)* cache.ASM_difference);
                 self.modes{i}.ASM_factor = ASM;
                 self.modes{i}.cASM_factor = conj(ASM);
             end
-         end
+        end
         % to be used for momentum calculation, use only the last layer 
         if par.momentum
             uniq_p_ind = unique(p_ind{ll});
@@ -347,6 +344,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
 
    end
    %if iter>0
+   %    disp(size(fourier_error(iter,:)))
    %    disp(any(~isfinite(fourier_error(iter,:))))
    %end
    if iter == 0

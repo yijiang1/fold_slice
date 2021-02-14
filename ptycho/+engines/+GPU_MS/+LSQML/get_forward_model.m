@@ -76,28 +76,22 @@ function [self, probe, obj_proj, psi] = get_forward_model(self, obj_proj, par, c
             
             % get exitwave after each layer
             psi{ll} = probe{llp,layer} .* obj_proj{llo};
-            % fourier propagation  
-            [psi{ll}] = fwd_fourier_proj(psi{ll} , self.modes{layer}, g_ind);  
-            if par.Nlayers > 1
-                 probe{llp,layer+1} = psi{llp};
+            
+            %modified by YJ: no need to do another propagation after the
+            %last object layer
+            if layer < par.Nlayers 
+                % fourier propagation
+                [psi{ll}] = fwd_fourier_proj(psi{ll} , self.modes{layer}, g_ind);  
+                if par.Nlayers > 1
+                     probe{llp,layer+1} = psi{llp};
+                end
             end
        end
    end
-   
-   % multilayer but not count final inf layer, then an additional farfield
-   % fft needed. Added by ZC
-   if par.Nlayers > 1 && isinf(self.z_distance(end)) && length(self.z_distance) > par.Nlayers
-       for ll= 1:max(par.object_modes, par.probe_modes)
-           psi{ll} = fft2_safe(psi{ll});  % fully farfield 
-           probe{ll,par.Nlayers+1} = psi{ll};
-       end
+   % At this point, psi is the exit wave after the last object layer
+   % Now propagate the wave function to far-field (detector) plane
+   % This is same as using fwd_fourier_proj w. distance = inf and no camera angle refinement 
+   for ll= 1:max(par.object_modes, par.probe_modes)
+       psi{ll} = fft2_safe(psi{ll});  % fully farfield 
    end
-            % debug by Zhen Chen
-%         temp=gather(psi{1});
-%         if any(isnan(temp(:))) || any(temp(:)> 1e3)
-%             keyboard;
-%         end
-        
-
-       
 end
