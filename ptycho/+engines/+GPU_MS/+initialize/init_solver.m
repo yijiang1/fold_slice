@@ -219,6 +219,8 @@ function [self, cache] = init_solver(self,par)
     
     %Comment by YJ: par.Nmodes seems to be # of modes for A-fly scan
 %     for i = 1:max(par.Nmodes, par.Nlayers) 
+    %par.Nlayers equals to the # of slices in the object (excluding the
+    %vacuum layer)
     for i = 1:par.Nlayers % modified by ZC
         verbose(2,'Creating new modes files ')
         modes{i}.lambda =  self.lambda;
@@ -663,12 +665,11 @@ function [self, cache] = init_solver(self,par)
 
     if par.initial_probe_rescaling
         %% initial rescaling of probe intensity , just a very rough guess     
-        if isfield(par.p, 'rmvac') && par.p.rmvac % vac layer removed then modes{end} not a fft, by Zhen Chen
-            temp = fft2_safe(self.probe{1}(:,:,1));
-            mean_aPsi = mean2(abs(temp.^2)); % bug fixed by Zhen Chen, previous no ^2
-        else
-            mean_aPsi = mean2(abs(fwd_fourier_proj(self.probe{1}(:,:,1), self.modes{end})).^2); 
-        end
+        % modified by ZC, propagate probe to far field
+        mean_aPsi = mean2(abs(fft2_safe(self.probe{1}(:,:,1))).^2); 
+        % old method: self.modes{end} is the vaccum layer
+        %mean_aPsi = mean2(abs(fwd_fourier_proj(self.probe{1}(:,:,1), self.modes{end})).^2); 
+        
         mean_diffraction_intensity = mean(mean2(self.diffraction(:,:,randi(self.Npos, [10,1])).^2));  % take roughly average intensity  % bug fixed by Zhen Chen, previous no ^2
 
         for ii = 1:par.probe_modes

@@ -634,7 +634,6 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         p.multi_slice_param.z_distance = self.z_distance;
         p.multi_slice_param.regularize_layers = par.regularize_layers;
         p.multi_slice_param.preshift_ML_probe = par.preshift_ML_probe;
-        p.multi_slice_param.rmvac = par.rmvac;
         p.multi_slice_param.layer4pos = par.layer4pos;
         
         % store parameters for object initialization
