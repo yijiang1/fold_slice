@@ -6,7 +6,11 @@ import io.*
 
 % Define often-used variables
 lambda = p.lambda;
-asize = p.asize; % Diffr. patt. array size   
+asize = p.asize; % Diffr. patt. array size  
+% added by YJ for up-sampled diffraction patterns.
+if p.detector.upsampling >0
+	asize = asize*2^p.detector.upsampling;
+end
 dx_spec = p.dx_spec;
 a2 = prod(asize);
 
