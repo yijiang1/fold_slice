@@ -55,7 +55,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         scan_ids = cache.preloaded_indices_compact{1}.scan_ids;
     end
     Nind = length(indices);
-    %disp(Nind)
+
     for jj = 1:Nind
          layer_ids{jj} = 1:par.Nlayers; 
     end
@@ -131,10 +131,6 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
                 end
             end
         end
-        %if iter>0
-        %    disp(size(fourier_error(iter,g_ind)))
-            %disp(any(~isfinite(fourier_error(iter,g_ind))))
-        %end
         
         if strcmp(par.likelihood, 'poisson')   || iter == 0
             [chi,R] = modulus_constraint(modF,aPsi,psi, mask, noise, par, 1);
@@ -151,7 +147,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         if ~strcmp(par.likelihood, 'poisson')    % soft memory cleanup 
             mask = []; aPsi = []; noise = []; modF = [];  R=[];
         end
-        %disp(size(psi(:,end)))
+        
         if iter > par.estimate_NF_distance
             % update estimation of the nearfield propagation distance 
             [self, cache] = gradient_NF_propagation_solver(self,psi(:,end),chi, cache, g_ind);
@@ -343,10 +339,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
 %         
 
    end
-   %if iter>0
-   %    disp(size(fourier_error(iter,:)))
-   %    disp(any(~isfinite(fourier_error(iter,:))))
-   %end
+
    if iter == 0
        % apply initial correction for the probe intensity and return
        probe_amp_corr = sqrt(probe_amp_corr(1) / probe_amp_corr(2)); %% calculate ratio between modF^2 and aPsi^2
