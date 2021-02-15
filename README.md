@@ -10,7 +10,7 @@ It inherits the academic license agreement from PSI.
 To run GPU-based ptychographic reconstruction, you have to use MATLAB 2018. Other version may not work properly. This is the way!
 
 # Major differences from the PtychoShelves package
-1. Some data I/O code has been changed to accoumdate for electron ptychography. See sample scripts for more details.
+1. Some data I/O code has been changed to accommodate for electron ptychography. See sample scripts for more details.
 
 2. A modified least-squares maximum likelihood multi-slice ptychography algorithm is added as a new engine: GPU_MS
 
@@ -37,6 +37,9 @@ Terms and Conditions of the LICENSE
 "Data processing was carried out using the cSAXS ptychography MATLAB package developed by the Science IT and the coherent X-ray scattering (CXS) groups, Paul Scherrer Institut, Switzerland."
 
 Additionally, any publication using the package, or any translation of the code into another computing language should cite
+
+(for PtychoShelves) K. Wakonig, H.-C. Stadler, M. Odstrčil, E.H.R. Tsai, A. Diaz, M. Holler, I. Usov, J. Raabe, A. Menzel, M. Guizar-Sicairos, PtychoShelves, a versatile high-level framework for high-performance analysis of ptychographic data, J. Appl. Cryst. 53(2) (2020). (doi: 10.1107/S1600576720001776)
+
 
 (for difference map) P. Thibault, M. Dierolf, A. Menzel, O. Bunk, C. David, F. Pfeiffer, High-resolution scanning X-ray diffraction microscopy, Science 321, 379-382 (2008). (doi: 10.1126/science.1158573).
 
