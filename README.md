@@ -18,6 +18,16 @@ It's based on the GPU engine (written by Michal Odstrcil) with improvements such
 
 Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Hanke, S. Ganschow, D. G. Schlom, D. A. Muller, Electron ptychography achieves atomic-resolution limits set by lattice vibrations. https://arxiv.org/abs/2101.00465
 
+3. A non-exhaustive list of new features in the GPU and GPU_MS engines: 
+
+| Features  | GPU         |  GPU_MS | 
+| :---         |     :---:      |  :---: |
+| Mixed-states + multi-slice ptychography  | :heavy_multiplication_x:  | :heavy_check_mark:  |
+| Dynamic multi-slice reconstruction | :heavy_multiplication_x:  | :heavy_check_mark:  |
+| Advanced arbitrary-path fly-scan ptychography| :heavy_check_mark: | :heavy_multiplication_x:|
+| Multi-scan reconstruction | :heavy_check_mark: | :heavy_multiplication_x: |
+| TV regularization on object phase| :heavy_check_mark: | :heavy_check_mark: |
+| Grid artifact removal| :heavy_check_mark: | :heavy_multiplication_x: |
 
 
 # Academic License Agreement
