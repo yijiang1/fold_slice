@@ -346,11 +346,31 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
              
     %% suppress uncontrained values !! 
     if iter > par.object_change_start && par.object_regular(1) > 0
-        for ll = 1:max(par.object_modes, par.Nscans)           
+        %disp(length(self.object))
+        %disp(par.Nscans)
+        for ll = 1:max(par.object_modes)
+        %for ll = 1:max(par.object_modes, par.Nscans)
             self.object{ll} = apply_smoothness_constraint(self.object{ll},par.object_regular(1)); % blur only intensity, not phase 
         end
     end
+    
+    %% Added by YJ. Remove grid artifacts using Fourier windows
+    if iter > par.object_change_start && all(par.rm_grid_artifact_step_size) 
+        for ll = 1:par.object_modes
+            object_temp = self.object{ll};
+            object_temp_ph = angle(object_temp);
+            object_temp_ph_roi = object_temp_ph(cache.object_ROI{:}); % only use the object region
 
+            step_size = par.rm_grid_artifact_step_size;
+            window_size = par.rm_grid_artifact_window_size;
+            direction = par.rm_grid_artifact_direction;
+            
+            object_temp_ph_roi = remove_grid_artifact(object_temp_ph_roi, self.pixel_size(1), step_size, window_size, direction, false);
+            object_temp_ph(cache.object_ROI{:}) = object_temp_ph_roi;
+            self.object{ll} = abs(object_temp).*exp(1i.*object_temp_ph);
+        end
+    end
+    
     %% Added by YJ. TV regularization on object
     if iter > par.object_change_start  && isfield(par,'TV_lambda') && par.TV_lambda > 0
         N_tv_iter = 10;
@@ -362,7 +382,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     end
     %% weak positivity object 
     if iter > par.object_change_start  && any(par.positivity_constraint_object)
-         for ll = 1:par.object_modes   
+         for ll = 1:par.object_modes
              self.object{ll}(cache.object_ROI{:}) = ...
                  Gfun(@positivity_constraint_object,self.object{ll}(cache.object_ROI{:}), par.positivity_constraint_object);
          end
@@ -710,8 +730,8 @@ end
     
     % store useful parameters back to the main structure only for the 1st mode 
     outputs.relative_pixel_scale = self.modes{1}.scales(end,:);
-    outputs.rotation =  self.modes{1}.rotation(end,:);
-    outputs.shear =   self.modes{1}.shear(end,:);
+    outputs.rotation = self.modes{1}.rotation(end,:);
+    outputs.shear = self.modes{1}.shear(end,:);
     outputs.z_distance = self.modes{1}.distances(end,:);
     outputs.shift_scans = self.modes{1}.shift_scans;
     outputs.probe_fourier_shift = self.modes{1}.probe_fourier_shift; 
@@ -720,7 +740,7 @@ end
     outputs.detector_scale = 1+self.modes{1}.probe_scale_upd(end);
 
     if strcmp(par.likelihood, 'poisson')
-        fourier_error = fourier_error- fourier_error(1,:);
+        fourier_error = fourier_error - fourier_error(1,:);
     end
     fourier_error = Ggather(fourier_error);
 
