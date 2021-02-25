@@ -1,5 +1,5 @@
 % INITIALIZE generate list of default parameters 
-% [param] = initialize 
+% [param] = get_defaults 
 % 
 %
 % returns: 
@@ -55,8 +55,8 @@ function [param] = get_defaults
     
     param.object_regular =  [0, 0]; %  enforce smoothness !!!, use between [0-0.1 ]
     param.remove_object_ambiguity = true;    % remove intensity ambiguity between the object and the probes 
-    param. variable_probe = false;           % Use SVD to account for variable illumination during a single (coupled) scan
-    param. apply_subpix_shift = false;       % apply FFT-based subpixel shift, important for good position refinement but it is slow
+    param.variable_probe = false;           % Use SVD to account for variable illumination during a single (coupled) scan
+    param.apply_subpix_shift = false;       % apply FFT-based subpixel shift, important for good position refinement but it is slow
 
     param.probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % list of free parameters in the geometry model
     param.probe_position_search = inf;
@@ -102,6 +102,14 @@ function [param] = get_defaults
                                           %'line' (default): line scan with big jumps. 
                                           %'continuous': contiuous path. 
                                           %'external': load positions from external files
+                                          
+    % regularizations added by YJ
+    % Remove grid artifacts in the phase image via a windowed Fourier filter (assume raster scan)
+    % Based on the idea in https://doi.org/10.1063/1.4993744
+    param.rm_grid_artifact_step_size = [0,0];       % scan step size in the [horizontal, vertical] directions. No filter if any of them is 0 (default).
+    param.rm_grid_artifact_window_size = [5,5];     % window size in the [horizontal, vertical] directions
+    param.rm_grid_artifact_direction = 'xy';        % filter directions: 'x' (horizontal), 'y' (vertical), or 'xy' (default)
+
     rng('default');
     rng('shuffle');
     
