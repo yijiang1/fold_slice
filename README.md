@@ -3,14 +3,28 @@
 This is Yi Jiang's customized code for X-ray/electron ptychography and tomography/laminography.
 
 The package is built upon the Matlab code developed by the Science IT and the coherent X-ray scattering (CXS) groups at Paul Scherrer Institut, Switzerland:
-https://www.psi.ch/en/sls/csaxs/software
+https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should follow the agreements (see below) and/or refer to their website.
 
-It inherits the academic license agreement from PSI.
+# Getting Started
+1. To run GPU-based ptychographic reconstruction, you need to have MATLAB 2018a. Other version may not work properly. This is the way!
+2. You also need the following matlab toolbox in order to use all the features in the package:
 
-To run GPU-based ptychographic reconstruction, you have to use MATLAB 2018. Other version may not work properly. This is the way!
+Parallel computing toolbox
+
+Curve Fitting Toolbox
+
+Image processing toolbox
+
+Optimization toolbox
+
+Signal processing toolbox
+
+3. If you want to dig into the LSQ-ML algorithm, you can take a look at the files in /fold_slice/ptycho/notes/. Some of them might be outdated, but it can help you understand the overall code structure.
+
+4. We plan to have a weekly study group to discuss things related to image reconstruction (mainly about ptychography, tomography, and machine learning problems). You can find the presentations here: https://anl.box.com/s/3ddqp3d0r6yv09a49qlaz0i1frrhnxgl
 
 # Major differences from the PtychoShelves package
-1. Some data I/O code has been changed to accommodate for electron ptychography. See sample scripts for more details.
+1. Some data I/O code has been changed to accommodate for electron ptychography. See the example scripts for more details.
 
 2. A modified least-squares maximum likelihood multi-slice ptychography algorithm is added as a new engine: GPU_MS
 
@@ -28,6 +42,19 @@ Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Ha
 | Multi-scan reconstruction | :heavy_check_mark: | :heavy_multiplication_x: |
 | TV regularization on object phase| :heavy_check_mark: | :heavy_check_mark: |
 | Grid artifact removal| :heavy_check_mark: | :heavy_multiplication_x: |
+
+# Other ptychography software
+If you don't own Matlab or want to explore other ptychography software. Here are some public repositories:
+
+Adorym: https://github.com/mdw771/adorym
+
+Ptycho_gui: https://github.com/NSLS-II/ptycho_gui
+
+Ptychopy: https://github.com/kyuepublic/ptychopy
+
+PyNX: http://ftp.esrf.fr/pub/scisoft/PyNX/doc/
+
+Tike: https://github.com/tomography/tike
 
 
 # Academic License Agreement
