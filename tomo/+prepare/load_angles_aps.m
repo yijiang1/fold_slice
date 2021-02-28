@@ -2,7 +2,7 @@
 %   Directly load from original master .h5 files
 %   created by YJ based on PSI's function
 
-%   [par,  angles] = load_angles(par, scans, plot_angles)
+%   [par,  angles] = load_angles_aps(par, scans, plot_angles)
 %   Inputs: 
 %       **par               tomo parameter structure 
 %       **scans           - list of loaded scan numbers 
@@ -12,7 +12,7 @@
 %       ++par               tomo parameter structure 
 %       ++angles            loaded angles 
 
-function [par,  angles] = load_angles_aps(par, scans, plot_angles)
+function [par, angles] = load_angles_aps(par, scans, plot_angles)
     warning on
     Nscans = length(scans);
     angles = nan(Nscans,1);
@@ -23,7 +23,7 @@ function [par,  angles] = load_angles_aps(par, scans, plot_angles)
         file_suffix = '_master.h5'; %default for velociprobe data outputs
     end
     
-    if isfield(par,par.angle.h5path) && ~isempty(par.angle.h5path)
+    if isfield(par.angle,'h5path') && ~isempty(par.angle.h5path)
         h5path = par.angle.h5path;
     else
         h5path = '/entry/sample/goniometer/chi_start';
@@ -42,18 +42,19 @@ function [par,  angles] = load_angles_aps(par, scans, plot_angles)
         filename = strcat(par.base_path, 'ptycho/',sprintf(par.scan_string_format, scans(i)),'/',sprintf(par.scan_string_format, scans(i)),file_suffix);
         if ~isempty(filename)
             try
-            	angles(i) = h5read(filename,h5path);
+            	angle_temp = h5read(filename,h5path);
+                angles(i) = angle_temp(1);
                 status = [sprintf(par.scan_string_format, scans(i)), ' angle = ',num2str(angles(i))];
             catch
                 disp(['Reading angle failed for ', sprintf(par.scan_string_format, scans(i))]);
                 disp(strcat('Check angle h5path:',h5path))
+                disp(filename)
                 status = ['Reading angle failed for ', sprintf(par.scan_string_format, scans(i))];
             end
         else
             hasAngle(i) = 0;
             disp(['No angle found for ',sprintf(par.scan_string_format, scans(i))])
             status = ['No angle found for ',sprintf(par.scan_string_format, scans(i))];
-
         end
         
         % Update waitbar and message
