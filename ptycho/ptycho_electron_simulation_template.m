@@ -7,7 +7,7 @@ testmode = false;       % In test mode, lock files are not written and plots are
 initial_probe_file = strcat(base_path_ptycho,'/init_probe.mat');
 load(initial_probe_file)
 
-energy = p.voltage;
+energy = par_probe.voltage;
 dk = p.dk;
 scan_string_format = 'data%d';
 roi_label = '0';

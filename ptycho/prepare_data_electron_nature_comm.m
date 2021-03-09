@@ -39,8 +39,14 @@ h5write(strcat(save_dir,saveName), '/dp', dp)
 
 %% Step 5: prepare initial probe
 dx=1/Np_p(1)/dk; %% pixel size in real space (angstrom)
-cs = 0;
-probe=generateProbeFunction(dx,Np_p(1),0,0,df,cs,1,voltage,alpha0,0);
+
+par_probe = {};
+par_probe.df = df;
+par_probe.voltage = voltage;
+par_probe.alpha_max = alpha0;
+par_probe.plotting = true;
+probe = make_tem_probe(dx, Np_p(1), par_probe);
+
 probe=probe/sqrt(sum(sum(abs(probe.^2))))*sqrt(Itot)/sqrt(Np_p(1)*Np_p(2));
 probe=single(probe);
 % add parameters for PtychoShelves_electron
