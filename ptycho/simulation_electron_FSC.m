@@ -30,31 +30,29 @@ ind_obj_center = floor(N_obj/2)+1;
 
 %% generate probe function
 disp('Generate probe function...')
-df = 800; %defocus in angstrom
-cs = 0;
-voltage = 300; %beam voltage in keV
-alpha_max = 18; %convergence angle in mrad
-show_figure = true;
-[probe_true, mask, ~] = generateProbeFunction(dx,N, 0,0,df ,cs, 1, voltage, alpha_max, show_figure );
+par_probe = {};
+par_probe.df = 800; %defocus in angstrom
+par_probe.C3 = 0; %third-order spherical aberration in angstrom
+par_probe.voltage = 300; %beam voltage in keV
+par_probe.alpha_max = 18; %semi-convergence angle in mrad
+par_probe.plotting = true;
+[probe_true, ~] = make_tem_probe(dx,N,par_probe);
+
 %calculate rbf
-lambda = 12.398/sqrt((2*511.0+voltage).*voltage); %angstrom
+lambda = 12.398/sqrt((2*511.0+par_probe.voltage).*par_probe.voltage); %angstrom
 dk = 1/dx/N; %fourier-space pixel size in 1/A
-rbf = alpha_max/1e3/lambda/dk;
+rbf = par_probe.alpha_max/1e3/lambda/dk;
 %% save initial probe and parameters
 probe = probe_true;
-data_dir = strcat('amorph_ss',num2str(scan_step_size),'_a',num2str(alpha_max),'_df',num2str(df),'_dose',num2str(dose),'/');
+data_dir = strcat('amorph_ss',num2str(scan_step_size),'_a',num2str(par_probe.alpha_max),'_df',num2str(par_probe.df),'_dose',num2str(dose),'/');
 mkdir(fullfile(base_dir,data_dir))
 p = {};
 p.binning = false;
 p.detector.binning = false;
 p.dk = dk;
-p.voltage = voltage;
-p.df = df;
-p.alpha_max = alpha_max;
-p.cs = cs;
 p.N_scans_h = N_scans_h;
 p.N_scans_v = N_scans_v;
-save(strcat(base_dir,data_dir,'init_probe'),'probe','p')
+save(strcat(base_dir,data_dir,'init_probe'),'probe','p','par_probe')
 
 %% Generate scan positions
 disp('Generate scan positions...')
