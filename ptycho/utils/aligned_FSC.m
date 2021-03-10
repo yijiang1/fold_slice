@@ -227,7 +227,7 @@ if isempty(param.apod)
     try 
         param.apod = io.HDF.hdf5_load(file{1}, '/reconstruction/p/plot/obj_apod');
     catch
-        %warning('Unable to load apodization parameter from reconstruction file.')
+        warning('Unable to load apodization parameter from reconstruction file.')
         param.apod = false;
     end
 end
