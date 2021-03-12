@@ -60,7 +60,7 @@ if par.use_gpu
     %%%%split_data = is_method(par, {'MLc', 'DM'});
     split_data = false; % modified by YJ, seems to avoid some errors from GPU
     [self, cache] =  move_to_gpu(self,cache, par.keep_on_gpu, split_data);
-end 
+end
 if par.share_object && par.object_modes == 1
     % enforce only a single object 
     self.object = self.object(1,:);
@@ -109,7 +109,9 @@ pprev = -1;
 mode_id = 1;  % main mode (assume single most important mode for approchimations) 
 
 t0 = tic;
+t_recon0 = tic;
 t_start = tic;
+check_recon_time = true;
 iter_start = 1;
 
 % object averaging for DM code 
@@ -139,33 +141,38 @@ for ll = 1:par.probe_modes
    probe_init(:,:,ll,:) = probe_temp(:,:,1,:);
 end
 %%
-for iter =  (1-par.initial_probe_rescaling):par.number_iterations
+iter = 1-par.initial_probe_rescaling;
+while iter <= par.number_iterations %modified by YJ: use while loop for time-restricted reconstruction
+%for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     if iter == par.probe_position_search || iter==par.detector_scale_search+1 || iter == par.detector_rotation_search+1
         t0 = tic; %reset time for estimating avgTimePerIter. added by YJ
         iter_start = iter;
     end
     if iter > 0
-        %{
-        if verbose() == 0
-            progressbar(iter, par.number_iterations, max(20,round(sqrt(par.number_iterations))))
-        else
-            verbose(1,'Iteration %s: %i / %i  (time %3.3g  avg:%3.3g)', par.method, iter, par.number_iterations, toc(t_start), toc(t0)/(iter-1))
-        end
-        %}
-        %modified by YJ to print out more details
-
-        %verbose(0,'Iteration %s: %i / %i  (time %3.3g  avg:%3.3g)', par.method, iter, par.number_iterations, toc(t_start), toc(t0)/(iter-1))
+        % PSI's old progress message
+        %if verbose() == 0
+        %    progressbar(iter, par.number_iterations, max(20,round(sqrt(par.number_iterations))))
+        %else
+        %    verbose(1,'Iteration %s: %i / %i  (time %3.3g  avg:%3.3g)', par.method, iter, par.number_iterations, toc(t_start), toc(t0)/(iter-1))
+        %end
+        
+        %Modified by YJ to show more details
         avgTimePerIter = toc(t0)/(iter-iter_start);
-        timeLeft = (par.number_iterations-iter+1)*avgTimePerIter;
-        %verbose(0, 'Method: %s, GPU id: %i',par.method, gpu.Index)
-        if timeLeft>3600
-            verbose(0, 'Iteration: %i / %i  (Time left:%3.3g hour. avg:%3.3g sec)', iter, par.number_iterations, timeLeft/3600, avgTimePerIter)
-        elseif timeLeft>60
-            verbose(0,'Iteration: %i / %i  (Time left:%3.3g min. avg:%3.3g sec)', iter, par.number_iterations, timeLeft/60, avgTimePerIter)
+        if par.time_limit - toc(t_recon0) < (par.number_iterations-iter+1)*avgTimePerIter
+        %if par.time_limit < inf % if reconstruction is time limited
+            timeLeft = par.time_limit - toc(t_recon0); % recon is time-limited
+            iterTotal = ceil(timeLeft/avgTimePerIter) + iter; %estimate total # of iteration
         else
-            verbose(0,'Iteration: %i / %i  (Time left:%3.3g sec. avg:%3.3g sec)', iter, par.number_iterations, timeLeft, avgTimePerIter)
+            timeLeft = (par.number_iterations-iter+1)*avgTimePerIter; %recon is iteration-limited
+            iterTotal = par.number_iterations;
         end
-
+        if timeLeft>3600
+            verbose(0, 'Iteration: %i / %i  (Time left:%3.3g hour. avg:%3.3g sec)', iter, iterTotal, timeLeft/3600, avgTimePerIter)
+        elseif timeLeft>60
+            verbose(0,'Iteration: %i / %i  (Time left:%3.3g min. avg:%3.3g sec)', iter, iterTotal, timeLeft/60, avgTimePerIter)
+        else
+            verbose(0,'Iteration: %i / %i  (Time left:%3.3g sec. avg:%3.3g sec)', iter, iterTotal, timeLeft, avgTimePerIter)
+        end
     end
 
     t_start = tic;
@@ -255,7 +262,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         self.modes{1}.probe_scale_window = fftshift(get_window(self.Np_p, 1-self.modes{1}.probe_scale_upd(end), 1) .* get_window(self.Np_p, 1-self.modes{1}.probe_scale_upd(end), 2)) ; 
     else
         self.modes{1}.probe_scale_window = [];
-    end    
+    end
    
     %% updated illumination
     if iter <= 1 || ( iter > par.probe_change_start && (mod(iter, 10) == 1 || iter < par.probe_change_start+10 ))
@@ -291,7 +298,10 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    if iter == 0; continue; end  % interation 0 is used only to calibrate iinitial probe intensity
+    if iter == 0 % interation 0 is used only to calibrate iinitial probe intensity
+        iter = iter + 1; %added by YJ for while loop
+        continue 
+    end
     
     if verbose() > 0  && any(~isnan(fourier_error(iter,:)))       
         switch lower(par.likelihood)
@@ -346,7 +356,10 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
              
     %% suppress uncontrained values !! 
     if iter > par.object_change_start && par.object_regular(1) > 0
-        for ll = 1:max(par.object_modes, par.Nscans)
+        %disp(length(self.object))
+        %disp(par.Nscans)
+        for ll = 1:max(par.object_modes)
+        %for ll = 1:max(par.object_modes, par.Nscans)
             self.object{ll} = apply_smoothness_constraint(self.object{ll},par.object_regular(1)); % blur only intensity, not phase 
         end
     end
@@ -675,7 +688,11 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         end
        
     end
-    
+    iter = iter + 1;
+    if check_recon_time && toc(t_recon0) > par.time_limit 
+        par.number_iterations = iter; % run one more iteration
+        check_recon_time = false;
+    end
 end
 
     %% return results 
@@ -750,7 +767,7 @@ end
 
     %% move everything back to RAM from GPU 
     if par.use_gpu
-        outputs =  move_from_gpu(outputs);
+        outputs = move_from_gpu(outputs);
     end
     
     %% report results
