@@ -2,6 +2,8 @@ function [rgb_data] = convert_to_rgb(data)
 %Convert complex data into rgb image showing both magnitude and phase
 %   Detailed explanation goes here
 
+import math.sp_quantile
+
 [W,H] = size(data);
 adata = abs(data);
 
