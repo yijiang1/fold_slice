@@ -35,12 +35,6 @@ function [self, param, p] = load_from_p(param, p)
             verbose(0,param.fout)
         end
     end
-    if isfield(p, 'save_phase_image')
-        param.save_phase_image = p.save_phase_image;
-    end
-    if isfield(p, 'save_probe_mag')
-        param.save_probe_mag = p.save_probe_mag;
-    end
     if isfield(p, 'extraPrintInfo')
         param.extraPrintInfo = p.extraPrintInfo;
     end
@@ -428,7 +422,6 @@ function [self, param, p] = load_from_p(param, p)
     end
     % multilayer extension 
     if isfield(p, 'delta_z')
-    %if isfield(p, 'delta_z') && p.Nlayers > 1 % quick fix for Nlayers =1 by ZC
         assert(all(isfinite(p.delta_z)), 'Some of the provided layer distanced delta_z is not finite' )
         self.z_distance = [p.delta_z(:)', self.z_distance]; 
     end

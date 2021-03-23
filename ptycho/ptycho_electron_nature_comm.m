@@ -315,8 +315,7 @@ eng.apply_tilted_plane_correction = ''; % if any(p.sample_rotation_angles([1,2])
 %% added by YJ
 eng.plot_results_every = Niter_plot_results;
 eng.save_results_every = Niter_save_results;
-eng.save_phase_image = true;
-eng.save_probe_mag = true;
+eng.save_images = {'obj_ph','probe'};
 
 resultDir = strcat(p.base_path,sprintf(p.scan.format, p.   scan_number),'/roi',p.scan.roi_label,'/');
 [eng.fout, p.suffix] =  generateResultDir(eng, resultDir,strcat('_rot_ang',num2str(rot_ang)));

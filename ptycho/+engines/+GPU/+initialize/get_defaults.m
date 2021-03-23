@@ -31,7 +31,7 @@ function [param] = get_defaults
     param.probe_modes = 1; % number of probes 
     param.object_modes = 1;  %  number of multi apertures , always better to start wih one !! 
     param.probe_change_start = 1;  % iteration when the probe reconstruction is started
-    param.object_change_start = 1;% iteration when the object reconstruction is started
+    param.object_change_start = 1; % iteration when the object reconstruction is started
     param.number_iterations = 300;
     param.time_limit = inf; % added by YJ: set a time limit (in seconds) for reconstruction
     param.grouping = inf;
@@ -51,7 +51,6 @@ function [param] = get_defaults
     param.background_detection = false; 
     param.background_width = inf;
 
-    
     %% ADVANCED OPTIONS   
     
     param.object_regular =  [0, 0]; %  enforce smoothness !!!, use between [0-0.1 ]
@@ -64,7 +63,8 @@ function [param] = get_defaults
     param.apply_relaxed_position_constraint = true; %added by YJ: allow position update without geom model constraint
     param.update_pos_weight_every = inf; %added by YJ: allow position weight to be updated multiple times. Default = inf: only calculate once
     param.max_pos_update_shift = 0.1; %added by YJ: allow user to specify the maximum position update allowed in each iteration. Default = 0.1 (pixel).
-    param.probe_position_search_momentum = 0; % added by YJ. enable momentum acceleration for position correction. Default = 0: no acceleration.
+    param.probe_position_search_momentum = 0; % added by YJ: enable momentum acceleration for position correction. Default = 0: no acceleration.
+    param.probe_position_downsampling = 0; % added by YJ: downsample object and probe by 2^x (default x=0) when calculating position update. Can be useful for coarse position correction.
 
     param.probe_fourier_shift_search = inf; 
     param.estimate_NF_distance = inf;
@@ -82,7 +82,7 @@ function [param] = get_defaults
     param.probe_position_error_max = 10e-9; % max expected error of the stages 
     param.probe_fourier_shift_search = inf; 
     param.momentum = 0;             % use mementume accelerated gradient decsent method 
-    
+
     param.regularize_layers = 0;    % 0<R<1 -> apply regularization on the reconstructed layers 
     param.preshift_ML_probe = true; % multilayer ptycho extension: if true, assume that the provided probe is reconstructed in center of the sample. 
     
@@ -119,5 +119,5 @@ function [param] = get_defaults
     
     % I/O
     param.save_init_probe = false;       % Added by YJ. If true, save initial probe function in the .mat output file. Default is false.
-    
+	param.save_images = {'obj_ph','probe'}; % Added by YJ. Save intermediate results as tiff images. Options: {'obj_ph','obj_ph_sum','probe_mag','probe'}
 end
