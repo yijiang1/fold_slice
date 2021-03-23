@@ -64,7 +64,6 @@ function [param] = get_defaults
     param.update_pos_weight_every = inf; %added by YJ: allow position weight to be updated multiple times. Default = inf: only calculate once
     param.max_pos_update_shift = 0.1; %added by YJ: allow user to specify the maximum position update allowed in each iteration. Default = 0.1 (pixel).
     param.probe_position_search_momentum = 0; % added by YJ: enable momentum acceleration for position correction. Default = 0: no acceleration.
-    param.probe_position_downsampling = 0; % added by YJ: downsample object and probe by 2^x (default x=0) when calculating position update. Can be useful for coarse position correction.
 
     param.probe_fourier_shift_search = inf; 
     param.estimate_NF_distance = inf;

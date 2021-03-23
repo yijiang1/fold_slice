@@ -357,10 +357,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
              
     %% suppress uncontrained values !! 
     if iter > par.object_change_start && par.object_regular(1) > 0
-        %disp(length(self.object))
-        %disp(par.Nscans)
-        for ll = 1:max(par.object_modes)
-        %for ll = 1:max(par.object_modes, par.Nscans)
+        for ll = 1:max(par.object_modes, par.Nscans)
             self.object{ll} = apply_smoothness_constraint(self.object{ll},par.object_regular(1)); % blur only intensity, not phase 
         end
     end
