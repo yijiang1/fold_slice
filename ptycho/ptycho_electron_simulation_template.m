@@ -316,8 +316,8 @@ eng.apply_tilted_plane_correction = ''; % if any(p.sample_rotation_angles([1,2])
 %% added by YJ
 eng.plot_results_every = Niter_plot_results;
 eng.save_results_every = Niter_save_results;
-eng.save_phase_image = true;
-eng.save_probe_mag = true;
+eng.save_images = {'obj_ph','probe'};
+
 eng.save_sub_objects = false;
 eng.avg_photon_threshold = 0; %Added by YJ. Check averaged photon count per pixel during pre-processing. Stop if smaller than the threshold (default = 0.01);
 
@@ -421,10 +421,8 @@ if Niter_refined>0
     %added by YJ
     eng.plot_results_every = Niter_plot_results;
     eng.save_results_every = Niter_save_results;
-    eng.save_phase_image = true;
-    eng.save_probe_mag = true;
+    
     [eng.fout, p.suffix] =  generateResultDir(eng, fout_old);
-
     fout_old = eng.fout;
 
     eng.extraPrintInfo = strcat('simulation-',num2str(p.scan_number));

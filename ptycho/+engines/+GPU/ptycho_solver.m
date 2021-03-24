@@ -22,6 +22,7 @@ import engines.GPU.initialize.*
 import engines.GPU.GPU_wrapper.*
 import math.*
 import utils.*
+import io.*
 
 % precalculate the parallel block sizes and sets 
 [cache, par] = get_parallel_blocks(self, par, cache); 
@@ -630,60 +631,55 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
             p.init_probe = probe_init; %store initial probe (after init_solver.m's pre-processing)
         end
         save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object');
+        
         %% save object phase
-        if isfield(par,'save_phase_image') && par.save_phase_image
+        if ismember('obj_ph', par.save_images) || ismember('obj_ph_sum', par.save_images)
             object_temp = Ggather(self.object{1});
             object_roi_temp = object_temp(cache.object_ROI{:});        
-            O_phase_roi = zeros(size(object_roi_temp,1), size(object_roi_temp,2)*par.Nlayers);
-            
-            for ll=1:par.Nlayers
-                object_temp = Ggather(self.object{ll});
-                object_roi = object_temp(cache.object_ROI{:});
-                x_lb = (ll-1)*size(object_roi,2)+1;
-                x_ub = ll* size(object_roi,2);
-                O_phase_roi(:,x_lb:x_ub) = phase_unwrap(angle(object_roi));
+            if ismember('obj_ph_sum', par.save_images)
+                O_phase_roi = phase_unwrap(angle(prod(object_roi_temp,3)));
+                saveName = strcat('obj_phase_roi_sum_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/obj_phase_roi_sum/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                save_tiff_image(O_phase_roi,strcat(saveDir,saveName));
             end
-            
-            saveName = strcat('O_phase_roi_Niter',num2str(iter),'.tiff');
-            saveDir = strcat(par.fout,'/O_phase_roi/');
-            if ~exist(saveDir, 'dir')
-                mkdir(saveDir)
+            if ismember('obj_ph', par.save_images)
+                O_phase_roi = zeros(size(object_roi_temp,1), size(object_roi_temp,2)*par.Nlayers);
+                for ll=1:par.Nlayers
+                    object_temp = Ggather(self.object{ll});
+                    object_roi = object_temp(cache.object_ROI{:});
+                    x_lb = (ll-1)*size(object_roi,2)+1;
+                    x_ub = ll*size(object_roi,2);
+                    O_phase_roi(:,x_lb:x_ub) = phase_unwrap(angle(object_roi));
+                end
+                saveName = strcat('obj_phase_roi_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/obj_phase_roi/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                save_tiff_image(O_phase_roi,strcat(saveDir,saveName));
             end
-            %imwrite(mat2gray(O_phase_roi),strcat(saveDir,fileName),'tiff');
-
-            % save as single tiff
-            tagstruct.ImageLength     = size(O_phase_roi,1);
-            tagstruct.ImageWidth      = size(O_phase_roi,2);
-            tagstruct.Photometric     = Tiff.Photometric.MinIsBlack;
-            tagstruct.BitsPerSample   = 16;
-            tagstruct.SamplesPerPixel = 1;
-            tagstruct.RowsPerStrip    = 16;
-            tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-            tagstruct.Software        = 'MATLAB';
-            t = Tiff(strcat(saveDir,saveName),'w');
-            t.setTag(tagstruct)
-            t.write(uint16(mat2gray(O_phase_roi)*2^16));
-            t.close();
         end
-        %% save probe mage
-        if isfield(par,'save_probe_mag') && par.save_probe_mag
-            %probe_mag = zeros(size(outputs.probe{1}(:,:,1,1),1),size(outputs.probe{1}(:,:,1,1),2)*length(outputs.probe));
-            probe_mag = zeros(size(probe,1),size(probe,2)*par.probe_modes);
-
+        
+        %% save probe
+        if ismember('probe_mag', par.save_images) || ismember('probe', par.save_images)
+            probe_temp = zeros(size(probe,1),size(probe,2)*par.probe_modes);
             for jj=1:par.probe_modes
                 x_lb = (jj-1)*size(probe,2)+1;
-                x_ub = jj* size(probe,2);
-                probe_mag(:,x_lb:x_ub) = abs(probe(:,:,jj));
+                x_ub = jj*size(probe,2);
+                probe_temp(:,x_lb:x_ub) = probe(:,:,jj);
             end
-            
-            saveName = strcat('probe_mag_Niter',num2str(iter),'.tiff');
-            saveDir = strcat(par.fout,'/probe_mag/');
-            if ~exist(saveDir, 'dir')
-                mkdir(saveDir)
+            if ismember('probe_mag', par.save_images)
+                saveName = strcat('probe_mag_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/probe_mag/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                imwrite(mat2gray(abs(probe_temp))*64,parula,strcat(saveDir,saveName),'tiff')
             end
-            imwrite(mat2gray(probe_mag)*64,parula,strcat(saveDir,saveName),'tiff')
+            if ismember('probe', par.save_images)
+                saveName = strcat('probe_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/probe/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                imwrite(convert_to_rgb(probe_temp),strcat(saveDir,saveName),'tiff')
+            end
         end
-       
     end
     iter = iter + 1;
     if check_recon_time && toc(t_recon0) > par.time_limit 

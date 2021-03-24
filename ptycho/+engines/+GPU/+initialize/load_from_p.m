@@ -40,12 +40,6 @@ function [self, param, p] = load_from_p(param, p)
             verbose(0,param.fout)
         end
     end
-    if isfield(p, 'save_phase_image')
-        param.save_phase_image = p.save_phase_image;
-    end
-    if isfield(p, 'save_probe_mag')
-        param.save_probe_mag = p.save_probe_mag;
-    end
     if isfield(p, 'extraPrintInfo')
         param.extraPrintInfo = p.extraPrintInfo;
     end
