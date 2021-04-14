@@ -105,7 +105,7 @@ if isempty(p.detector.data_prefix)
         % default setting for cSAXS beamline
         p.detector.data_prefix = [eaccount '_1_'];
     else
-        verbose(0,'p.detector.data_prefix is not defined')
+        verbose(3,'p.detector.data_prefix is not defined')
     end
 end
 
