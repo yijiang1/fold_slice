@@ -67,13 +67,7 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
         % execution on GPU more effecient + stable convergence 
         ind_range = 1:Nind;
     end
-     
-    %% added by YJ to store objects corresponding to each dp
-    if isfield(par,'save_sub_objects') && par.save_sub_objects && iter == par.number_iterations
-        disp('Save all sub objects in last iteration.')
-        self.sub_objects = zeros(self.Np_p(1),self.Np_p(2),self.Npos);
-        %disp(size(self.sub_objects))
-    end
+
     %% apply updated in parallel over sets indices{jj}
    for  jj = ind_range
        % list of positions solved in current subiteration 
@@ -96,10 +90,7 @@ function [self, cache, fourier_error] = LSQML(self,par,cache,fourier_error,iter)
         
         % estimate forward model, ie wavefront behind the sample 
         [self, probe, obj_proj, psi] = get_forward_model(self, obj_proj, par,cache, g_ind, p_ind, scan_ids{jj}, layer_ids{jj});
-        %% added by YJ to save object corresponds for each dp (obj_proj)
-        if isfield(par,'save_sub_objects') && par.save_sub_objects && iter == par.number_iterations
-            self.sub_objects(:,:,g_ind) = Ggather(obj_proj{1});
-        end
+
         %% load data to GPU 
         modF = get_modulus(self, cache, g_ind,true,jj);
         mask = get_mask(self, cache.mask_indices, g_ind, par.damped_mask);

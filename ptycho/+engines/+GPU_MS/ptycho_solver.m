@@ -569,21 +569,6 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
             outputs.probe_evolution = self.probe_evolution; %
         end
         
-        if isfield(self,'sub_objects') %save sub objects corresponding to each dp
-            %To be implemented later
-            %{
-            outputs.sub_objects = self.sub_objects; %
-            
-            %crop to smaller size 
-            if isfield(par,'save_sub_objects_N') && par.save_sub_objects_N < size(outputs.sub_objects,1)
-                N_temp = par.save_sub_objects_N;
-                cen_temp = floor(size(outputs.sub_objects,1)/2)+1;
-                outputs.sub_objects = self.sub_objects(cen_temp-N_temp/2:cen_temp+N_temp/2-1,cen_temp-N_temp/2:cen_temp+N_temp/2-1,:); %
-                %disp(size(outputs.sub_objects))
-            end
-            %}
-        end
-        
         if par.get_fsc_score && ~isempty(fsc_score)
             outputs.fsc_score = fsc_score;
         end
