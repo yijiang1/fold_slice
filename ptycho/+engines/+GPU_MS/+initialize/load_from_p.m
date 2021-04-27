@@ -41,15 +41,6 @@ function [self, param, p] = load_from_p(param, p)
     if isfield(p, 'affine_matrix')
         param.affine_matrix_init = p.affine_matrix;
     end
-    if isfield(p, 'save_sub_objects')
-    	param.save_sub_objects = p.save_sub_objects;
-        if p.save_sub_objects
-            verbose(0, 'All sub objects in last iteration will be saved.')
-        end
-        if isfield(p, 'save_sub_objects_N')
-            param.save_sub_objects_N = p.save_sub_objects_N;
-        end
-    end
     if isfield(p, 'beam_source')
         param.beam_source = p.beam_source;
     end
