@@ -39,7 +39,7 @@ def reconPIE_mixed_state(dp, paraDict):
     else:
         probes = np.zeros((N_probe, N_roi, N_roi), dtype=np.complex128)
         if paraDict['normalizeInitialProbe']:
-            print('normalize initial probe intensity to match CBED')
+            #print('normalize initial probe intensity to match CBED')
             probe = paraDict['probe0'] * sqrt(np.sum(dp_avg) / np.sum(abs(paraDict['probe0'])**2) / N_tot)
         else:
             probe = paraDict['probe0']
@@ -73,7 +73,6 @@ def reconPIE_mixed_state(dp, paraDict):
     resultDir['probes'] = probes
     resultDir['probe0'] = paraDict['probe0'].copy()
     if 'probes0' in paraDict: resultDir['probes0'] = paraDict['probes0'].copy()
-    resultDir['rotationAngle'] = paraDict['rotationAngle']
     resultDir['dx_x'] = 1.0/(paraDict['dk_x']*N_roi); 
     resultDir['dx_y'] = 1.0/(paraDict['dk_y']*N_roi);
     resultDir['dk_x'] = paraDict['dk_x']; resultDir['dk_y'] = paraDict['dk_y']
@@ -114,14 +113,7 @@ def reconPIE_mixed_state(dp, paraDict):
             
             probes_temp = gramschmidt(probes.reshape(N_probe, N_roi*N_roi))
             probes[:,:,:] = probes_temp.reshape(N_probe, N_roi, N_roi)
-            '''
-            #sort probes based on power
-            power = sum(abs(probes)**2, axis=(1,2))
-            power_ind = argsort(-power)
-            probes[:,:,:] = probes[power_ind,:,:]
-            
-            probes[:,:,:] = auxiFunc.orthoProbe(probes)
-            '''
+           
         update_order = random.permutation(paraDict['N_scan']) #random order
  
         for i in update_order:
@@ -155,30 +147,15 @@ def reconPIE_mixed_state(dp, paraDict):
                     probe_update = auxiFunc.calculateUpdate(O_old, delta_psi[p,:,:], 'p')
                     probes_shifted[p,:,:] += probe_update
                     probes[p,:,:] = auxiFunc.shiftProb(probes_shifted[p,:,:], i, 'toOrigin', checkFilter=True)
-                    #probes_shifted[p,:,:] += beta/O_tot_max * conj(O_old) * delta_psi[p,:,:,]
-                    
-                    #r[:,:] =  probes_shifted[p,:,:]; fft_forward.update_arrays(r,f); fft_forward.execute()
-                    #f = f*exp(2*pi*1j*px_f[i]*kX)*exp(2*pi*1j*py_f[i]*kY)
-                    #if paraDict.has_key('filter_f_probe'): f = f * paraDict['filter_f_probe']
-                    #fft_inverse.update_arrays(f,r); fft_inverse.execute();
-                    #probes[p,:,:] = r / N_tot
-                    #if paraDict.has_key('filter_r_probe'): probes[p,:,:] = probes[p,:,:] * paraDict['filter_r_probe']
-            #if k >= paraDict['Niter_position_correction']:
+
             if k>=paraDict['Niter_update_position']:
                 auxiFunc.gradPositionCorrection(probe_old[0,:,:], O_old, i, delta_psi[0,:,:])
 
         ############################### orthogonalise probe #######################################
         if k >= paraDict['Niter_update_states']:
-            
             probes_temp = gramschmidt(probes.reshape(N_probe, N_roi*N_roi))
             probes[:,:,:] = probes_temp.reshape(N_probe, N_roi, N_roi)
-            '''
-            #sort probes based on power
-            power = sum(abs(probes)**2, axis=(1,2))
-            power_ind = argsort(-power)
-            probes[:,:,:] = probes[power_ind,:,:]
-            '''
-            #probes[:,:,:] = auxiFunc.orthoProbe(probes)
+           
         ############################### calcuate data error #######################################
         s[k] = np.sum(dp_error)/dp_tot
         dp_error_old = dp_error.copy()

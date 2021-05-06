@@ -39,8 +39,10 @@ voltage = squeeze(data['voltage']) #kev
 alpha_max = squeeze(data['alpha_max']) #mrad
 df = squeeze(data['df'])
 cs = squeeze(data['cs']) #angstrom
-scanStepSize_x = squeeze(data['scanStepSize_x'])
-scanStepSize_y = squeeze(data['scanStepSize_y'])
+#scanStepSize_x = squeeze(data['scanStepSize_x']) #angstrom
+#scanStepSize_y = squeeze(data['scanStepSize_y'])
+scanStepSize_x = 0.21 #angstrom
+scanStepSize_y = 0.21
 
 dk = squeeze(data['dk'])
 
@@ -75,7 +77,7 @@ Ny_max = max([abs(round(np.min(ppY)/dx)-floor(N_roi/2.0)), abs(round(np.max(ppY)
 Nx_max = max([abs(round(np.min(ppX)/dx)-floor(N_roi/2.0)), abs(round(np.max(ppX)/dx)+ceil(N_roi/2.0))])*2+1
 N_image = int(max([Ny_max,Nx_max]))+20
 print("Image size:", N_image)
-
+'''
 ######### reshape dp and scan positions #########
 N_scan_y = dp.shape[2]
 N_scan_x = dp.shape[3]
@@ -89,44 +91,30 @@ for i in range(N_scan_y):
     for j in range(N_scan_x):
         index = i*N_scan_x + j
         dp_temp[index,:,:] = sqrt(dp[:,:,i,j])
-
+'''
 ########################################### reconstruction #####################################
 print('Reconstruction')
-reconObject = pty.ptycho(dp_temp, dk, probe_init, ppX, ppY)
-reconObject.paraDict['dk_y'] = dk
-reconObject.paraDict['dk_x'] = dk
+reconObject = pty.ptycho(dp, dk, probe_init, ppX, ppY)
 reconObject.paraDict['N_image'] = N_image
 reconObject.paraDict['N_roi'] = N_roi
-reconObject.paraDict['Niter'] = 200
+reconObject.paraDict['Niter'] = 50
 reconObject.paraDict['Niter_update_probe'] = 0
-reconObject.paraDict['Niter_save'] = 100
+reconObject.paraDict['Niter_save'] = 5
 
-reconObject.paraDict['beta'] = 1
-reconObject.paraDict['alpha'] = 0.1
-
-reconObject.paraDict['normalizeInitialProbe'] = False
-reconObject.paraDict['uniformInitialObject'] = True
 reconObject.paraDict['rotationAngle']  = rot_angle_d
 
 reconObject.paraDict['printID'] = 'MoS2'
 
 ############## position correction ##############
-reconObject.paraDict['Niter_update_position'] = 100
+reconObject.paraDict['Niter_update_position'] = 30
 
 ############## mixed-states recon ##############
 reconObject.paraDict['N_probe'] = 2
-reconObject.paraDict['N_object'] = 1
-reconObject.paraDict['Niter_update_states'] = 50
+reconObject.paraDict['Niter_update_states'] = 10
 
-result_dir = currentdir + "/mos2" + result_dir_extra
+result_dir = currentdir + "/mos2"
 result_dir_extra = reconObject.initialize(result_dir)
 
-############## load existing probe ##############
-#reconObject.paraDict['probes0'] = probes0 #mixed states opr
-#reconObject.paraDict['probe0_info'] = probe_dir + '/' + probe_name
-
-print(result_dir_extra)
-print(reconObject.paraDict['saveName'])
 start_time = time.time()
 reconObject.recon() #start reconstruction
 total_time = time.time() - start_time
