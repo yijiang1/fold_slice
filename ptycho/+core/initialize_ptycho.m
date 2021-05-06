@@ -149,6 +149,45 @@ if ~status
     return
 end
 
+% Added by YJ: remove bad data with very low counts
+% p.avg_photon_threshold is defined same as the one in GPU engines
+if isfield(p, 'avg_photon_threshold') && p.avg_photon_threshold > 0
+    diffraction = (single(p.fmag .* p.fmask) / single(p.renorm) ).^2;
+    good_dp_ind = squeeze(sum(sum(diffraction)) / prod(p.asize) >= p.avg_photon_threshold);
+    
+    %remove bad scan points from p
+    p.positions_real = p.positions_real(good_dp_ind,:);
+    p.positions_orig = p.positions_orig(good_dp_ind,:);
+    p.positions = p.positions(good_dp_ind,:);
+    p.fmag = p.fmag(:,:,good_dp_ind);
+    p.fmask = p.fmask(:,:,good_dp_ind);
+    
+    low_count_dp_ind = find((1-good_dp_ind)==1);
+    for ii=1:length(p.scanidxs)
+        scan_ind_temp = p.scanidxs{ii};
+        N_scan_pts = length(scan_ind_temp);
+        [val, pos]=intersect(scan_ind_temp,low_count_dp_ind);
+        num_bad_pts = length(val); % get the # of bad pts for current scan
+        p.share_pos{ii}(pos,:) = []; %remove positions for current scan
+        if ii == 1
+            scanidxs_lb = 1;
+        else
+            scanidxs_lb = p.scanidxs{ii-1}(end)+1;
+        end
+        p.numpts(ii) = N_scan_pts-num_bad_pts;
+        p.scanindexrange(ii,:) = [scanidxs_lb, scanidxs_lb+p.numpts(ii)-1];
+        p.scanidxs{ii} = p.scanindexrange(ii,1):p.scanindexrange(ii,2);
+    end
+    
+    p.numpos = sum(p.numpts);
+
+    %store indices for bad data
+    p.low_count_dp = 1-good_dp_ind;
+    
+    if any(p.low_count_dp)
+        verbose(1, 'Remove %d diffraction pattern(s) with low counts', sum(p.low_count_dp))
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% plot prepared data %%%%
