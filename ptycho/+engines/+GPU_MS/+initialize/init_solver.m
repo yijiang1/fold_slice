@@ -249,7 +249,7 @@ function [self, cache] = init_solver(self,par)
         end
         
         distance = self.z_distance(min(end,i));
-        
+
         if ~isinf(distance)
             verbose(2, 'Layer %i distance %g um  ', i, distance*1e6 )
         end
@@ -456,7 +456,16 @@ function [self, cache] = init_solver(self,par)
                     self.object{ll,jj} = obj_avg;
                 end
             end
-        case 'interp' % interpolate layers 
+        case 'avg1' % only use the averaged layer
+            verbose(0,'Average initial layers and only keep one')
+            object_temp = cell(size(self.object,1),1);
+            for ll = 1:par.Nscans
+                obj_avg = prod(cat(3,self.object{ll,:}),3); 
+                obj_avg = abs(obj_avg).*exp(1i*phase_unwrap(angle(obj_avg))/size(self.object,2));
+                object_temp{ll,1} = obj_avg;
+            end
+            self.object = object_temp;
+        case 'interp' % interpolate layers
             if ~isempty(par.init_layer_interp)
                 verbose(0,'Interpolate %d initial layers to %d layers', size(self.object,2), length(par.init_layer_interp))
                 for ll = 1:par.Nscans
@@ -584,7 +593,6 @@ function [self, cache] = init_solver(self,par)
     self.noise = Noise; 
     self.mask = Mask; 
     self.background = reshape(Background,1,1,[]);        
-
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%% PRECALCULATE USEFUL VALUES %%%%%%%
