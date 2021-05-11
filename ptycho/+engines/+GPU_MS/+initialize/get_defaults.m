@@ -91,6 +91,7 @@ function [param] = get_defaults
     param.init_layer_preprocess = '';   % Added by YJ. Specify how to pre-process initial layers
                                        % '' or 'all' (default): use all layers (do nothing)
                                        % 'avg': average all layers 
+                                       % 'avg1': keep one averaged layer 
                                        % 'interp': interpolate layers using spline method. Need to specify desired depths in init_layer_interp
     param.init_layer_interp = [];     % Specify desired depths for interpolation. The depths of initial are [1:Nlayer_init]. If empty (default), no interpolation                    
     param.init_layer_append_mode = '';  % Added by YJ. Specify how to initialize extra layers
