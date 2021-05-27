@@ -14,25 +14,38 @@ from probe import STEMprobe
 class ptycho:
       """Ptychography reconstruction"""
       def __init__(self, dp, dk, initialProbe, ppX, ppY):
-          self.dp = dp
           self.initialProbe = initialProbe
           self.paraDict = {'dk':dk}
+
+          ########## reshape scan positions and diffraction patterns ##########
+          N_scan_y = dp.shape[2]
+          N_scan_x = dp.shape[3]
+          N_scan_tot = N_scan_y * N_scan_x
+
+          self.dp = zeros((N_scan_tot,dp.shape[0],dp.shape[1]))
+          self.paraDict['ppX'] = ppX.reshape(N_scan_tot)
+          self.paraDict['ppY'] = ppY.reshape(N_scan_tot)
+
+          for i in range(N_scan_y):
+              for j in range(N_scan_x):
+                  index = i*N_scan_x + j
+                  self.dp[index,:,:] = sqrt(dp[:,:,i,j])
+
           self.paraDict['dk_y'] = dk
           self.paraDict['dk_x'] = dk
-          self.paraDict['ppX'] = ppX
-          self.paraDict['ppY'] = ppY
-          self.paraDict['N_dp'] = dp.shape[1]
-          self.paraDict['N_scan'] = dp.shape[0]
-          self.paraDict['badPixels'] = zeros((dp.shape[1],dp.shape[1]))
+          
+          self.paraDict['N_dp'] = self.dp.shape[1]
+          self.paraDict['N_scan'] = self.dp.shape[0]
+          self.paraDict['badPixels'] = zeros((self.dp.shape[1],self.dp.shape[1]))
           self.paraDict['Niter'] = 200
           self.paraDict['Niter_save'] = 50
           self.paraDict['Niter_print'] = 1
           self.paraDict['beta'] = 1.0
-          self.paraDict['alpha'] = 1.0
+          self.paraDict['alpha'] = 0.1
           
           self.paraDict['Niter_update_probe'] = 10
-          self.paraDict['uniformInitialObject'] = False
-          self.paraDict['normalizeInitialProbe'] = False
+          self.paraDict['uniformInitialObject'] = True
+          self.paraDict['normalizeInitialProbe'] = True
 
           self.paraDict['filter_r_type_psi'] = 'none'
           self.paraDict['filter_r_type_probe'] = 'none'
@@ -45,16 +58,16 @@ class ptycho:
           self.paraDict['reconID'] = 0
           self.paraDict['printID'] = ''
           
-          #position correction
-          self.paraDict['offsetMode'] = ''
-          self.paraDict['errorMetric'] = ''
+          #mixed-states
+          self.paraDict['N_probe'] = 1
+          self.paraDict['N_object'] = 1
       
       def recon(self):
           print("begin ptychographic reconstruction")
           pie_mixed_states.reconPIE_mixed_state(self.dp, self.paraDict)
 
       def initialize(self, result_dir):
-           ################################## probe #################################
+           ########## initial probe ##########
            #create initial probe
            self.initialProbe.dx = 1.0/(self.paraDict['dk']*self.paraDict['N_roi'])
            #print self.initialProbe.dx
@@ -62,11 +75,8 @@ class ptycho:
 
            if not 'probe0' in self.paraDict: self.paraDict['probe0'] = self.initialProbe.generateProbe()
            #self.initialProbe.printParameters()
-           result_dir = result_dir + "_dk"+str(np.round(self.paraDict['dk'],4))
-           if self.initialProbe.df != 0: result_dir = result_dir + "_df"+str(self.initialProbe.df) + "A"
-           if self.initialProbe.cs != 0: result_dir = result_dir + "_cs"+str(self.initialProbe.cs) + "mm"
 
-           ################################## save data #################################
+           ########## save data ##########
            if self.paraDict['saveData']:
                print('saving dp_recon...')
                if 'dataDir' in self.paraDict:
@@ -77,42 +87,15 @@ class ptycho:
                    os.chdir(result_dir)
                sio.savemat('dp_recon',{'dp_recon':self.dp,'dk':self.paraDict['dk']})
 
-           ################################## filters #################################
-           result_dir = self.generateFilters(result_dir, self.paraDict['filter_r_type_psi'], 'r', 'psi')
-           result_dir = self.generateFilters(result_dir, self.paraDict['filter_r_type_probe'], 'r', 'probe')
-           result_dir = self.generateFilters(result_dir, self.paraDict['filter_f_type_psi'], 'f', 'psi')
-           result_dir = self.generateFilters(result_dir, self.paraDict['filter_f_type_probe'], 'f', 'probe')
+           ########## filters ##########
+           a = self.generateFilters('', self.paraDict['filter_r_type_psi'], 'r', 'psi')
+           a = self.generateFilters('', self.paraDict['filter_r_type_probe'], 'r', 'probe')
+           a = self.generateFilters('', self.paraDict['filter_f_type_psi'], 'f', 'psi')
+           a = self.generateFilters('', self.paraDict['filter_f_type_probe'], 'f', 'probe')
 
-           result_dir  = result_dir + "/NiterUpdateProbe" + str(self.paraDict['Niter_update_probe'])
+           self.paraDict['saveName'] =  "recon"
 
-           ################################# miscellaneous ############################### 
-           if self.paraDict['normalizeInitialProbe']:
-               result_dir = result_dir + "_normIniProbe"
-           if np.any(self.paraDict['badPixels']): result_dir = result_dir + "_excludeBadPixels"
-           if 'probeMask' in self.paraDict: result_dir = result_dir + "_probeMask"
-
-           if 'probe_profile' in self.paraDict: result_dir = result_dir + "_imposeProbeProfile"
-
-           if self.paraDict['Niter_update_position'] < self.paraDict['Niter']: 
-               result_dir = result_dir + "_position_correction"+str(self.paraDict['Niter_update_position'])
-
-           self.paraDict['saveName'] =  "recon_N_roi"+str(self.paraDict['N_roi'])
-
-           ################################# scan position correction ###############################
-           if self.paraDict['offsetMode'] == 'random':
-               dirPositionCorrection = "/scanPositionCorrection_Niter"+str(self.paraDict['N_correct_sp'])+"_Noffset"+str(self.paraDict['N_offset'])+ "_maxOffset"+str(self.paraDict['maxOffset'])+"_totalShiftUB"+str(self.paraDict['totalShiftUpperBound'])+"_maxOffsetLB"+str(self.paraDict['maxOffsetLowerBound'])
-           elif self.paraDict['offsetMode'] == 'uniformDirection':
-               dirPositionCorrection = "/scanPositionCorrection_Niter"+str(self.paraDict['N_correct_sp'])+"_Noffset"+str(self.paraDict['N_offset'])+ "_maxOffset"+str(self.paraDict['maxOffset'])+"_uniformDirection"
-           else:
-               dirPositionCorrection = ''
-
-
-           ############################### mixed states ptychography ######################################
-           sult_dir = result_dir + "/N_mixed_states" + str(self.paraDict['Niter_update_states'])
-           if self.paraDict['N_probe'] > 1:
-               result_dir = result_dir + "_N_prob" + str(self.paraDict['N_probe'])
-           
-           ####################################### create result dir ######################################
+           ########## create result dir ##########
            if not os.path.exists(result_dir): os.makedirs(result_dir)
            os.chdir(result_dir)
            return result_dir
@@ -120,7 +103,7 @@ class ptycho:
       def generateFilters(self, result_dir, filterType, space, waveFunction):
           if self.paraDict['filter_' + space + '_type_' + waveFunction] == 'none':
               return result_dir
-          print("Generating " + filterType + " filter in " + space + " space for " + waveFunction)
+          #print("Generating " + filterType + " filter in " + space + " space for " + waveFunction)
           N_roi = self.paraDict['N_roi']
           result_dir = result_dir + "/filter_" + space + "_"
           filerKey = 'filter_' + space + '_' + waveFunction

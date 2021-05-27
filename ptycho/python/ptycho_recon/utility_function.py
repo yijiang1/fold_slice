@@ -336,7 +336,7 @@ def resample_scan(input, windowSize, scanStepSize_x, scanStepSize_y, directory =
 
 ##############################################################################################
 def transpose_cbed(input, directory = ""):
-    print("transpose cbed patterns...")
+    print("transpose cbed patterns")
     output = zeros((input.shape[1],input.shape[0],input.shape[2],input.shape[3]))
 
     for i in range(input.shape[2]):
@@ -399,7 +399,7 @@ def normalize_cbed(input, dk, directory = ""):
     
 ##############################################################################################
 def background_removal(input, bg_level, directory = ""):
-    print("removing background... level=", bg_level)
+    print("removing background: threshold=", bg_level)
     output = input.copy()
     output[output<=bg_level] = 0
     directory = directory + "_bgRemoval"+str(bg_level)
@@ -407,7 +407,7 @@ def background_removal(input, bg_level, directory = ""):
 
 ##############################################################################################
 def background_subtraction(input, bg_level, directory = ""):
-    print("subtracting background... level=", bg_level)
+    print("subtracting background: threshold=", bg_level)
 
     output = input - bg_level
     output[output<0] = 0
@@ -417,7 +417,7 @@ def background_subtraction(input, bg_level, directory = ""):
 
 ##############################################################################################
 def calculate_scan_positions(N_scan_x, N_scan_y, scanStepSize_x, scanStepSize_y, rot_angle_d = 0, directory = "", randomOffset = 0, ppX = 0, ppY = 0):
-    print("calculating scan positions...")
+    print("calculate scan positions")
     print("N_scan_x =", N_scan_x, "scanStepSize_x =", scanStepSize_x)
     print("N_scan_y =", N_scan_y, "scanStepSize_y =", scanStepSize_y)
     print("rot_angle =", rot_angle_d)
