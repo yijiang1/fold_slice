@@ -277,10 +277,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
                 if object_reconstruct && is_method(par, 'MLs') 
                     self.object = update_object(self, self.object, object_upd_sum, layer_ids{jj}(layer), llo, {g_ind}, scan_ids(jj), par, cache, beta_object);
                 end
-                % Added by ZC. allow user to specify layer for position corr.
-                if ~isfield(par,'layer4pos') || isempty(par.layer4pos) 
-                    par.layer4pos = ceil(par.Nlayers/2);
-                end
+                
                 if  ll == 1  &&  layer == par.layer4pos %layer == ceil(par.Nlayers/2)  % assume that sample in center is best constrained . Changed to variable layer by Zhen Chen
                     %%%%%%%%%%%%% update other parameters of the ptychography model
                     if  iter >= par.probe_position_search || iter >= par.detector_rotation_search || iter >= par.detector_scale_search

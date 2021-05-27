@@ -109,7 +109,7 @@ end
 %%%%%% checks for the multilayer method  %%%%%%%%%%%%%%%%
 %Note: self.z_distance is first initialized in load_from_p.m, where a
 %vacuum layer is appended: self.z_distance = [p.delta_z, inf] for far-field 
-par.Nlayers = length(self.z_distance); 
+par.Nlayers = length(self.z_distance);
 if par.Nlayers > 1 && isinf(self.z_distance(end)) 
     % Added by ZC: exclude the last vacuum (inf) layer for multisluce
     par.Nlayers = par.Nlayers - 1;
@@ -126,6 +126,10 @@ end
 % end
 if par.Nlayers > 1 && par.Nscans > 1
 	error('Multilayer extension is not supported with multiple scans')
+end
+% Added by ZC. allow user to specify the layer used for position correction
+if ~isfield(par,'layer4pos') || isempty(par.layer4pos) 
+    par.layer4pos = ceil(par.Nlayers/2);
 end
 
 %%%%%%%%%%  fast scanning %%%%%%%%%%%%%%%%%%%%%%%%%
