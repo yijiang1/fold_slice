@@ -1,28 +1,29 @@
 % FIND_GEOM_CORRECTION use current probe positions estimates to update geometry model and
 % improve the  new probe positions 
 %
-% [self] = find_geom_correction(self,cache, par, iter,best_mode_id)
+% [self] = find_geom_correction(self,cache, par, iter, best_mode_id, update_position_weight)
 % 
 %
 % ** self      structure containing inputs: e.g. current reconstruction results, data, mask, positions, pixel size, ..
 % ** cache     structure with precalculated values to avoid unnecessary overhead
 % ** par       structure containing parameters for the engines 
 % ** iter      current iteration 
-% ** best_mode_id   strongest mode id
+% ** best_mode_id             strongest mode id
+% ** update_position_weight   update_position_weight
 %
 % returns:
 % ++ self        self-like structure with final reconstruction
 %
 %
-function [self] = find_geom_correction(self,cache, par, iter,best_mode_id, update_position_weight)
+function [self] = find_geom_correction(self,cache, par, iter, best_mode_id, update_position_weight)
 
     import engines.GPU_MS.GPU_wrapper.*
     import engines.GPU_MS.shared.*
     import utils.*
     import math.*
-    
+
     mode = self.modes{best_mode_id};
-   
+
     %% constrain the detector rotation 
      
     % store only the single update per scan 
@@ -60,8 +61,7 @@ function [self] = find_geom_correction(self,cache, par, iter,best_mode_id, updat
         total_variation = zeros(self.Npos,2, 'single'); 
         
         for ii = 1:par.Nscans
-            best_layer = par.Nlayers;
-            o_tmp =  self.object{min(end,ii), best_layer}; 
+            o_tmp =  self.object{min(end,ii), par.layer4pos}; 
             o_tmp = o_tmp ./ max2(abs(o_tmp(cache.object_ROI{:})));
             % keep it more memory effecient (important for GPU !! )
             Npos = length(self.reconstruct_ind{ii});
