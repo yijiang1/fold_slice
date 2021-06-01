@@ -653,34 +653,44 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object');
         
         %% save object phase
-        if ismember('obj_ph', par.save_images) || ismember('obj_ph_sum', par.save_images)
+        if any(ismember({'obj_ph','obj_ph_sum','obj_ph_stack'}, par.save_images))
             object_temp = Ggather(self.object{1});
-            object_roi_temp = object_temp(cache.object_ROI{:});        
+            object_roi_temp = object_temp(cache.object_ROI{:},:);
+            N_obj_roi = size(object_roi_temp);
+            O_phase_roi = zeros(N_obj_roi(1), N_obj_roi(2), par.Nlayers);
+            for ll=1:par.Nlayers
+                object_temp = Ggather(self.object{ll});
+                O_phase_roi(:,:,ll) = phase_unwrap(angle(object_temp(cache.object_ROI{:})));
+            end
             if ismember('obj_ph_sum', par.save_images)
-                O_phase_roi = phase_unwrap(angle(prod(object_roi_temp,3)));
+                O_phase_roi_sum = sum(O_phase_roi,3);
                 saveName = strcat('obj_phase_roi_sum_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/obj_phase_roi_sum/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                save_tiff_image(O_phase_roi,strcat(saveDir,saveName));
+                save_tiff_image(O_phase_roi_sum,strcat(saveDir,saveName));
             end
             if ismember('obj_ph', par.save_images)
-                O_phase_roi = zeros(size(object_roi_temp,1), size(object_roi_temp,2)*par.Nlayers);
+                O_phase_roi2 = zeros(N_obj_roi(1), N_obj_roi(2)*par.Nlayers);
                 for ll=1:par.Nlayers
-                    object_temp = Ggather(self.object{ll});
-                    object_roi = object_temp(cache.object_ROI{:});
-                    x_lb = (ll-1)*size(object_roi,2)+1;
-                    x_ub = ll*size(object_roi,2);
-                    O_phase_roi(:,x_lb:x_ub) = phase_unwrap(angle(object_roi));
+                    x_lb = (ll-1)*N_obj_roi(2)+1;
+                    x_ub = ll*N_obj_roi(2);
+                    O_phase_roi2(:,x_lb:x_ub) = O_phase_roi(:,:,ll);
                 end
                 saveName = strcat('obj_phase_roi_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/obj_phase_roi/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                save_tiff_image(O_phase_roi,strcat(saveDir,saveName));
+                save_tiff_image(O_phase_roi2,strcat(saveDir,saveName));
+            end
+            if ismember('obj_ph_stack', par.save_images)
+                saveName = strcat('obj_phase_roi_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/obj_phase_roi_stack/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                imExportTiff(O_phase_roi,strcat(saveDir,saveName),'XY');
             end
         end
         
         %% save probe
-        if ismember('probe_mag', par.save_images) || ismember('probe', par.save_images)
+        if any(ismember({'probe_mag','probe'}, par.save_images))
             probe_temp = zeros(size(probe,1),size(probe,2)*par.probe_modes);
             for jj=1:par.probe_modes
                 x_lb = (jj-1)*size(probe,2)+1;

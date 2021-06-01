@@ -118,5 +118,5 @@ function [param] = get_defaults
     
     % I/O
     param.save_init_probe = false;       % Added by YJ. If true, save initial probe function in the .mat output file. Default is false.
-	param.save_images = {'obj_ph','probe'}; % Added by YJ. Save intermediate results as tiff images. Options: {'obj_ph','obj_ph_sum','probe_mag','probe'}
+	param.save_images = {'obj_ph','probe'}; % Added by YJ. Save intermediate results as tiff images. Options: {'obj_ph','obj_ph_sum','obj_ph_stack','probe_mag','probe'}
 end
