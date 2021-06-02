@@ -21,7 +21,7 @@ gpu_id = 1;
 Niter_save_results = 50;
 Niter_plot_results = inf;
 
-Nprobe = 4; % # of probe modes
+Nprobe = 8; % # of probe modes
 thickness = 210; % sample thickness in angstrom
 Nlayers = 21; % # of slices for multi-slice, 1 for single-slice
 delta_z = thickness / Nlayers;
@@ -201,7 +201,7 @@ eng. gpu_id = gpu_id;                      % default GPU id, [] means choosen by
 eng. check_gpu_load = true;            % check available GPU memory before starting GPU engines 
 
 % general
-eng. number_iterations = 600;          % number of iterations for selected method 
+eng. number_iterations = 200;          % number of iterations for selected method 
 eng. asize_presolve = [128, 128];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. align_shared_objects = false;     % before merging multiple unshared objects into one shared, the object will be aligned and the probes shifted by the same distance -> use for alignement and shared reconstruction of drifting scans  
 
@@ -304,14 +304,14 @@ resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.sc
 [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
 %% refined reconstruction at full resolution
-eng. number_iterations = 400;          % number of iterations for selected method 
+eng. number_iterations = 200;          % number of iterations for selected method 
 eng. asize_presolve = [];              % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. grouping = 32;                    % size of processed blocks, larger blocks need more memory but they use GPU more effeciently, !!! grouping == inf means use as large as possible to fit into memory 
                                        % * for hPIE, ePIE, MLs methods smaller blocks lead to faster convergence, 
                                        % * for MLc the convergence is similar 
                                        % * for DM is has no effect on convergence
 eng. probe_change_start = 10;          % Start updating probe at this iteration number
-eng. probe_position_search = 20;       % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
+eng. probe_position_search = 50;       % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
 
 [eng.fout, p.suffix] = generateResultDir(eng, resultDir);
 
