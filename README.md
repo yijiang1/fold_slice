@@ -5,7 +5,7 @@ This is Yi Jiang's customized code for X-ray/electron ptychography and tomograph
 The package is built upon the Matlab code developed by the Science IT and the coherent X-ray scattering (CXS) groups at Paul Scherrer Institut, Switzerland:
 https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should follow the agreements (see below) and/or refer to their website.
 
-# Getting Started
+# Getting started
 1. Check the official documentation of the PtychoShelves package to see its software requirement. You need the following matlab toolbox in order to use all the features in the package: Parallel computing (for GPU engines and astra), Curve Fitting, Image processing, Optimization, Signal processing.
 
 2. Try the data preparation and reconstruction scripts in /fold_slice/ptycho/ to get familiar with the data format and reconstruction parameters.
