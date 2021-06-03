@@ -2,7 +2,6 @@ clear variables
 addpath(strcat(pwd,'/utils/'))
 addpath(core.find_base_package)
 
-testmode = false;       % In test mode, lock files are not written and plots are generated every iteration
 %%%%%%%%%%%%%%%%%%%% data parameters %%%%%%%%%%%%%%%%%%%%
 base_path = '/home/beams2/YJIANG/ptychography/electron/mos2/nat_comm/';
 roi_label = '0_Ndp128';
@@ -21,13 +20,12 @@ N_scan_x = 60;
 %%%%%%%%%%%%%%%%%%%% reconstruction parameters %%%%%%%%%%%%%%%%%%%%
 gpu_id = 1;
 Niter = 1000;
-Niter_save_results = 50;
-Niter_plot_results = 20;
+Niter_save_results = 100;
+Niter_plot_results = 50;
 
-Nprobe = 10; % # of probe modes
-variable_probe = true; % if true: use variable probe correction
-variable_probe_modes = 1; % # of modes for variable probe correction
-grouping = 60; % group size. small -> better convergence but longer time/iteration
+Nprobe = 5; % # of probe modes
+variable_probe_modes = 0; % # of modes for variable probe correction
+grouping = 120; % group size. small -> better convergence but longer time/iteration
 N_pos_corr = 0; % iteration number to start position correction. inf means no position correction
 initial_probe_file = '/home/beams2/YJIANG/ptychography/electron/mos2/nat_comm/1/init_probe.mat';
 
@@ -35,7 +33,7 @@ initial_probe_file = '/home/beams2/YJIANG/ptychography/electron/mos2/nat_comm/1/
 p = struct();
 p.   verbose_level = 2;                            % verbosity for standard output (0-1 for loops, 2-3 for testing and adjustments, >= 4 for debugging)
 p.   use_display = Niter_plot_results< Niter;                                      % global switch for display, if [] then true for verbose > 1
-p.   scan_number = [scan_number];                                    % Multiple scan numbers for shared scans
+p.   scan_number = scan_number;                                    % Multiple scan numbers for shared scans
 
 % Geometry
 p.   z = 1;                                             % Distance from object to detector. Always 1 for electron ptycho
@@ -46,10 +44,7 @@ p.   beam_source = 'electron';                         % Added by YJ for electro
 p.   d_alpha = alpha0/rbf;                              % Added by YJ. d_alpha is the pixel size in cbed (mrad). This is used to determine pixel size in electron ptycho
 p.   prop_regime = 'farfield';                              % propagation regime: nearfield, farfield (default), !! nearfield is supported only by GPU engines 
 p.   focus_to_sample_distance = [];                         % sample to focus distance, parameter to be set for nearfield ptychography, otherwise it is ignored 
-p.   FP_focal_distance = [];                                %  if nonempty -> assume Fourier ptychography configuration, FP_focal_distance = focal length of objective lens for Fourier Ptychography only,
-p.   angular_correction_setup = 'none';                         % if src_positions=='orchestra', choose angular correction for specific cSAXS experiment: 'flomni', 'omny', 'lamni', 'none', 
 p.   energy = voltage;                                           % Energy (in keV), leave empty to use spec entry mokev
-p.   sample_rotation_angles = [0,0,0];                      % Offaxis ptychography correction , 3x1 vector rotation around [X,Y,beam] axes in degrees , apply a correction accounting for tilted plane oR the sample and ewald sphere curvature (high NA correction)
 
 %p.   affine_angle = 0;                                     % Not used by ptycho_recons at all. This allows you to define a variable for the affine matrix below and keep it in p for future record. This is used later by the affine_matrix_search.m script
 %p.   affine_matrix = [1 , 0; 0, 1] ; % Applies affine transformation (e.g. rotation, stretching) to the positions (ignore by = []). Convention [yn;xn] = M*[y;x].
@@ -58,20 +53,7 @@ p.   affine_matrix = affine_mat ; % Applies affine transformation (e.g. rotation
 
 % Scan meta data
 p.   src_metadata = 'none';                                 % source of the meta data, following options are supported: 'spec', 'none' , 'artificial' - or add new to +scan/+meta/
-
-% Scan queue
-p.   queue.name = '';                                       % specify file queue; currently only 'filelist' is supported
-p.   queue.path=[''];      % Folder where the queue of files is defined, note the content of files can overwrite some parameters in p-structure
-p.   queue.max_attempts = 5;                                % Max number of attempts to reconstruct a scan.
-p.   queue.file_queue_timeout = 10;                         % Time to wait when queue is empty before checking it again 
-p.   queue.remote_recons = false;                           % divide the reconstruction into primary/replica processes to reconstruction on a remote server
-p.   queue.recon_latest_first = 1;                          % When using 'p.queue_path', (1) reconstruct the latest measurement first or (0) reconstruct in lexicographical order
-p.   queue.remote_path = '';                                % Queue list for remote reconstructions. Needs to be accessible for primary and replica processes
-p.   queue.tmp_dir_remote = '';                             % shared directory for storing the remote reconstruction
 p.   queue.lockfile = false;                                % If true writes a lock file, if lock file exists skips recontruction
-p.   spec.waitforscanfinish = true;                         % Checks spec file for the scan end flag 'X#'
-p.   spec.check_nextscan_started = true;                    % Waits until the next scan starts to begin reconstructing this one. It is important for OMNY scans with orchestra
-p.   spec.isptycho = {};                                    % Use only when SPEC is used: = {'round_roi','cont_line','ura_mesh'}  ( = {} to skip)  List of ptycho spec commands for valid ptycho scans
 
 % Data preparation
 p.   detector.name = 'empad';                           % see +detectors/ folder 
@@ -90,18 +72,11 @@ p.   prepare.auto_center_data = false;                      % if matlab data pre
 
 % Scan positions
 p.   src_positions = 'matlab_pos';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
-p.   positions_file = [''];    %Filename pattern for position files, Example: ['../../specES1/scan_positions/scan_%05d.dat']; (the scan number will be automatically filled in)
-
-p.   spec.motor.fine_motors = {};                           % Y and X motor name for positions, leave empty for defaults
-p.   spec.motor.fine_motors_scale = [];                     % ptycho expects real positions in m; 
-p.   spec.motor.coarse_motors = {};                         % Coarse sample position for shared object, use {X-motor, Y-motor} 
-p.   spec.motor.coarse_motors_scale = [];                   % Scale of the coarse motors (to scale the provided values to meters)
-
+p.   positions_file = '';    %Filename pattern for position files, Example: ['../../specES1/scan_positions/scan_%05d.dat']; (the scan number will be automatically filled in)
 % scan parameters for option src_positions = 'matlab_pos';
 p.   scan.type = 'raster';                                  % {'round', 'raster', 'round_roi', 'custom'}
 p.   scan.roi_label = roi_label;                            % For APS data
 p.   scan.format = scan_string_format;                      % For APS data format for scan directory generation
-%%% PSI %%% 
 p.   scan.radius_in = 0;                                    % round scan: interior radius of the round scan
 p.   scan.radius_out = 5e-6;                                % round scan: exterior radius of the round scan
 p.   scan.nr = 10;                                          % round scan: number of intervals (# of shells - 1)
@@ -145,8 +120,8 @@ p.   io.file_compression = 0;                               % reconstruction fil
 p.   io.data_compression = 3;                               % prepared data file compression for HDF5 files; 0 for no compression
 p.   io.load_prep_pos = false;                              % load positions from prepared data file and ignore positions provided by metadata
 
-p.   io.data_descriptor = 'mos2';                     %added by YJ. A short string that describe data when sending notifications 
-p.   io.phone_number = ['2178192766'];                      % phone number for sending messages
+p.   io.data_descriptor = 'MoS2';                     %added by YJ. A short string that describe data when sending notifications 
+p.   io.phone_number = '';                      % phone number for sending messages
 p.   io.send_failed_scans_SMS = false;                       % send message if p.queue_max_attempts is exceeded
 p.   io.send_finished_recon_SMS = false;                    % send message after the reconstruction is completed
 p.   io.send_crashed_recon_SMS = false;                     % send message if the reconstruction crashes
@@ -163,20 +138,10 @@ p.   initial_iterate_object_file{1} = '';                   %  use this mat-file
 
 % Initial iterate probe
 p.   model_probe = false;                                    % Use model probe, if false load it from file 
-p.   model.probe_is_focused = true;                         % Model probe is focused (false: just a pinhole)
-p.   model.probe_central_stop = true;                       % Model central stop
-p.   model.probe_diameter = 170e-6;                         % Model probe pupil diameter
-p.   model.probe_central_stop_diameter = 50e-6;             % Model central stop diameter
-p.   model.probe_zone_plate_diameter = 170e-6;              % Model probe zone plate diameter
-p.   model.probe_outer_zone_width = [];                     % Model probe zone plate outermost zone width (not used if not a focused probe) 
-p.   model.probe_propagation_dist = 3e-3;                 % Model probe propagation distance (pinhole <-> sample for unfocused, focal-plane <-> sample for focused)
-p.   model.probe_focal_length = 51e-3;                      % Model probe focal length (used only if model_is_focused is true
-                                                            %   AND model_outer_zone_width is empty)
-p.   model.probe_upsample = 10;                             % Model probe upsample factor (for focused probes)
-
 %Use probe from this mat-file (not used if model_probe is true)
 p.   initial_probe_file = initial_probe_file;
 p.   probe_file_propagation = 0.0e-3;                            % Distance for propagating the probe from file in meters, = 0 to ignore
+p.   normalize_init_probe = false;                           % Added by YJ. Can be used to disable normalization of initial probes
 
 % Shared scans - Currently working only for sharing probe and object
 p.   share_probe  = 0;                                      % Share probe between scans. Can be either a number/boolean or a list of numbers, specifying the probe index; e.g. [1 2 2] to share the probes between the second and third scan. 
@@ -185,13 +150,14 @@ p.   share_object = 0;                                      % Share object betwe
 % Modes
 p.   probe_modes  = Nprobe;                                 % Number of coherent modes for probe
 p.   object_modes = 1;                                      % Number of coherent modes for object
+
 % Mode starting guess
-p.   mode_start_pow = [0.02];                               % Normalized intensity on probe modes > 1. Can be a number (all higher modes equal) or a vector
+p.   mode_start_pow = 0.02;                               % Normalized intensity on probe modes > 1. Can be a number (all higher modes equal) or a vector
 p.   mode_start = 'herm';                                   % (for probe) = 'rand', = 'herm' (Hermitian-like base), = 'hermver' (vertical modes only), = 'hermhor' (horizontal modes only)
 p.   ortho_probes = true;                                   % orthogonalize probes after each engine
 
 %% Plot, save and analyze
-p.   plot.prepared_data = testmode;                         % plot prepared data
+p.   plot.prepared_data = false;                         % plot prepared data
 p.   plot.interval = [];                                    % plot each interval-th iteration, does not work for c_solver code
 p.   plot.log_scale = [0 0];                                % Plot on log scale for x and y
 p.   plot.realaxes = true;                                  % Plots show scale in microns
@@ -214,7 +180,7 @@ p.   plot.calc_FSC = false;                                 % Calculate the Four
 p.   plot.show_FSC = false;                                 % Show the FSC plots, including the cropped FOV
 p.   plot.residua = false;                                  % highlight phase-residua in the image of the reconstructed phase
 
-p.   save.external = ~testmode;                             % Use a new Matlab session to run save final figures (saves ~6s per reconstruction). Please be aware that this might lead to an accumulation of Matlab sessions if your single reconstruction is very fast.
+p.   save.external = true;                             % Use a new Matlab session to run save final figures (saves ~6s per reconstruction). Please be aware that this might lead to an accumulation of Matlab sessions if your single reconstruction is very fast.
 p.   save.store_images = false;                              % Write preview images containing the final reconstructions in [p.base_path,'analysis/online/ptycho/'] if p.use_display = 0 then the figures are opened invisible in order to create the nice layout. It writes images in analysis/online/ptycho
 p.   save.store_images_intermediate = false;                % save images to disk after each engine
 p.   save.store_images_ids = 1:4;                           % identifiers  of the figure to be stored, 1=obj. amplitude, 2=obj. phase, 3=probes, 4=errors, 5=probes spectrum, 6=object spectrum
@@ -235,7 +201,7 @@ eng. compress_data = false;             % use automatic online memory compressio
 eng. gpu_id = gpu_id;                      % default GPU id, [] means choosen by matlab
 eng. check_gpu_load = true;            % check available GPU memory before starting GPU engines 
 
-% general 
+% general
 eng. number_iterations = Niter;          % number of iterations for selected method 
 eng. asize_presolve = [];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. align_shared_objects = false;     % before merging multiple unshared objects into one shared, the object will be aligned and the probes shifted by the same distance -> use for alignement and shared reconstruction of drifting scans  
@@ -278,9 +244,11 @@ eng. probe_regularization = 0.1;      % Weight factor for the probe update (iner
 % position refinement 
 eng. apply_subpix_shift = true;       % apply FFT-based subpixel shift, it is automatically allowed for position refinement
 eng. probe_position_search = N_pos_corr;      % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
-eng. probe_geometry_model = {};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
+eng. probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
+%eng. probe_geometry_model = {};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
 eng. probe_position_error_max = inf; % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
-eng. apply_relaxed_position_constraint = false; % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
+eng. apply_relaxed_position_constraint = true; % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
+eng. update_pos_weight_every = 100; % added by YJ. Allow position weight to be updated multiple times. default = inf: only update once.
 
 % multilayer extension 
 eng. delta_z = [];                     % if not empty, use multilayer ptycho extension , see ML_MS code for example of use, [] == common single layer ptychography , note that delta_z provides only relative propagation distance from the previous layer, ie delta_z can be either positive or negative. If preshift_ML_probe == false, the first layer is defined by position of initial probe plane. It is useful to use eng.momentum for convergence acceleration 
@@ -297,10 +265,10 @@ eng. probe_fourier_shift_search = inf; % iteration number from which the engine 
 eng. estimate_NF_distance = inf;       % iteration number from which the engine will: try to estimate the nearfield propagation distance using gradient descent optimization  
 eng. detector_rotation_search = inf;   % iteration number from which the engine will: search for optimal detector rotation, preferably use with option mirror_scan = true , rotation of the detector axis with respect to the sample axis, similar as rotation option in the position refinement geometry model but works also for 0/180deg rotation shared scans 
 eng. detector_scale_search = inf;      % iteration number from which the engine will: refine pixel scale of the detector, can be used to refine propagation distance in ptycho 
-eng. variable_probe = variable_probe;           % Use SVD to account for variable illumination during a single (coupled) scan, see for more details:  Odstrcil, M. et al. Optics express 24.8 (2016): 8360-8369.
+eng. variable_probe = variable_probe_modes>0;           % Use SVD to account for variable illumination during a single (coupled) scan, see for more details:  Odstrcil, M. et al. Optics express 24.8 (2016): 8360-8369.
 eng. variable_probe_modes = variable_probe_modes;         % OPRP settings , number of SVD modes using to describe the probe evolution. 
 eng. variable_probe_smooth = 0;        % OPRP settings , enforce of smooth evolution of the OPRP modes -> N is order of polynomial fit used for smoothing, 0 == do not apply any smoothing. Smoothing is useful if only a smooth drift is assumed during the ptycho acquisition 
-eng. variable_intensity = true;       % account to changes in probe intensity
+eng. variable_intensity = variable_probe_modes>0;       % account to changes in probe intensity
 
 % extra analysis
 eng. get_fsc_score = false;            % measure evolution of the Fourier ring correlation during convergence 
@@ -312,14 +280,14 @@ eng.auto_center_probe = false;          % center the probe position in real spac
 eng.custom_data_flip = [0,0,0];         % apply custom flip of the data [fliplr, flipud, transpose]  - can be used for quick testing of reconstruction with various flips or for reflection ptychography 
 eng.apply_tilted_plane_correction = ''; % if any(p.sample_rotation_angles([1,2]) ~= 0),  this option will apply tilted plane correction. (a) 'diffraction' apply correction into the data, note that it is valid only for "low NA" illumination  Gardner, D. et al., Optics express 20.17 (2012): 19050-19059. (b) 'propagation' - use tilted plane propagation, (c) '' - will not apply any correction 
 
-%% added by YJ
+% I/O
 eng.plot_results_every = Niter_plot_results;
 eng.save_results_every = Niter_save_results;
-eng.save_images = {'obj_ph','probe'};
+eng.save_images ={'obj_ph','probe_mag','probe'};
+eng.extraPrintInfo = strcat('MoS2');
 
-resultDir = strcat(p.base_path,sprintf(p.scan.format, p.   scan_number),'/roi',p.scan.roi_label,'/');
-[eng.fout, p.suffix] =  generateResultDir(eng, resultDir,strcat('_rot_ang',num2str(rot_ang)));
-eng.extraPrintInfo = strcat('mos2_scan',num2str(p.   scan_number));
+resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.scan.roi_label,'/');
+[eng.fout, p.suffix] = generateResultDir(eng, resultDir);
 
 %add engine
 [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
@@ -328,4 +296,3 @@ eng.extraPrintInfo = strcat('mos2_scan',num2str(p.   scan_number));
 tic
 out = core.ptycho_recons(p);
 toc
-

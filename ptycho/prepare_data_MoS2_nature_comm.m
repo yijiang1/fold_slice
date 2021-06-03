@@ -49,7 +49,7 @@ probe = make_tem_probe(dx, Np_p(1), par_probe);
 
 probe=probe/sqrt(sum(sum(abs(probe.^2))))*sqrt(Itot)/sqrt(Np_p(1)*Np_p(2));
 probe=single(probe);
-% add parameters for PtychoShelves_electron
+% add parameters for PtychoShelves
 p = {};
 p.binning = false;
 p.detector.binning = false;
