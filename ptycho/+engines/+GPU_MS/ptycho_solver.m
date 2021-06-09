@@ -195,21 +195,21 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
             self.modes{1}.probe_fourier_shift(ind,:) = self.modes{1}.probe_fourier_shift(ind,:) - mean(self.modes{1}.probe_fourier_shift(ind,:));
         end
     end
-    %disp(size(self.modes))    
-    %% remove ambiguity related to the variable probe 
+    
+    %% remove ambiguity related to the variable probe
     if par.variable_probe && iter > par.probe_change_start && is_method(par, 'ML')
          self = remove_variable_probe_ambiguities(self,par); 
     end
 
-   %% remove the ambiguity in the probe / object reconstruction => keep average object transmission around 1
-   if  mod(iter,10)==1 &&  par.remove_object_ambiguity  && ~is_used(par, {'fly_scan'}) &&  ~is_method(par, {'DM', 'PIE'})  % too slow for variable probe 
+    %% remove the ambiguity in the probe / object reconstruction => keep average object transmission around 1
+    if  mod(iter,10)==1 &&  par.remove_object_ambiguity  && ~is_used(par, {'fly_scan'}) &&  ~is_method(par, {'DM', 'PIE'})  % too slow for variable probe 
         self = remove_object_ambiguity(self, cache, par) ; 
-   end
-   
+    end
+
     if (mod(iter, 10) == 1 || iter  < 5) && check_option(par, 'get_fsc_score')   && ...
        (((par.Nscans > 1 ) && size(self.object,1) == par.Nscans) || ... 
        ( check_option(self, 'object_orig') ))
-            
+
         %% Fourier ring correlation between two scans with independend objects 
         aux = online_FSC_estimate(self, par, cache, fsc_score(end,:), iter); 
         fsc_score(end+1,1:size(aux,1), 1:size(aux,2)) = aux; 
