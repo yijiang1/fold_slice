@@ -113,7 +113,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         noise = get_noise(self, par, g_ind); 
 
         % get intensity (modulus) on detector including different corrections
-        [aPsi, ~, cache, self] = get_reciprocal_model(self, psi, modF, mask,iter, g_ind, par, cache);
+        [aPsi, aPsi2, cache, self] = get_reciprocal_model(self, psi, modF, mask,iter, g_ind, par, cache);
 
         %%%%%%%%%%%%%%%%%%%%%%% LINEAR MODEL CORRECTIONS END %%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%            
         if iter > 0 && (verbose >= -1 || par.number_iterations > par.plot_results_every) && ... 
@@ -159,7 +159,6 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         if strcmp(par.likelihood, 'poisson')    % calculate only for the first mode
             %ll = 1;
             %% automatically find  optimal step-size, note that for Gauss it is 1 !! 
-            aPsi2 = sumsq_cell(Psi);
             beta_xi  =  gradient_descent_xi_solver(self,modF, aPsi2, R,mask, g_ind, mean(cache.beta_xi(g_ind)), cache);
             R = [];
             for ll = 1:max(par.probe_modes, par.object_modes)
