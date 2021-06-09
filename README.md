@@ -27,10 +27,10 @@ Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Ha
 
 | Features  | GPU         |  GPU_MS | 
 | :---         |     :---:      |  :---: |
-| Mixed-states + multi-slice ptychography  | :heavy_multiplication_x:  | :heavy_check_mark:  |
-| Dynamic multi-slice reconstruction | :heavy_multiplication_x:  | :heavy_check_mark:  |
+| Mixed-states + multislice ptychography  | :heavy_multiplication_x:  | :heavy_check_mark:  |
+| Dynamic multislice reconstruction | :heavy_multiplication_x:  | :heavy_check_mark:  |
 | Advanced arbitrary-path fly-scan ptychography| :heavy_check_mark: | :heavy_multiplication_x:|
-| Multi-scan reconstruction | :heavy_check_mark: | :heavy_multiplication_x: |
+| Multi-scan reconstruction | :heavy_check_mark: | :heavy_check_mark: |
 | TV regularization on object phase| :heavy_check_mark: | :heavy_check_mark: |
 | Grid artifact removal| :heavy_check_mark: | :heavy_multiplication_x: |
 
