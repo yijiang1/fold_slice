@@ -100,9 +100,11 @@ function [par, angles] = load_angles_aps(par, scans, plot_angles)
     angles = angles(ind);    % Angles not repeated in scan
     scans = scans(ind);
     %subtomos = subtomos(ind);
-
-    angles = angles + 0.1;  % avoid the angles to be too well aligned with pixels, ie avoid exact angles 0, 90, 180, ... 
-
+    
+    if isfield(par,'angle_offset') && par.angle_offset ~=0 
+        angles = angles + par.angle_offset;  % avoid the angles to be too well aligned with pixels, ie avoid exact angles 0, 90, 180, ... 
+    end
+    
     par.scanstomo = scans;
     %par.subtomos = subtomos;
 
