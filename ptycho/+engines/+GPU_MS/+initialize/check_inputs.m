@@ -120,13 +120,7 @@ assert(sum(~isfinite(self.z_distance)) <= 1, 'Provided distanced of layers are n
 if par.Nlayers > 1 && ~is_method(par, {'PIE', 'ML'})
     error('Multilayer extension is supported only for PIE/ML methods')
 end
-% Modified by ZC: multislice now works with multiple probe modes
-% if par.Nlayers > 1 && par.probe_modes > 1
-%     error('Multilayer extension is not supported with incoherent modes')
-% end
-if par.Nlayers > 1 && par.Nscans > 1
-	error('Multilayer extension is not supported with multiple scans')
-end
+
 % Added by ZC. allow user to specify the layer used for position correction
 if ~isfield(par,'layer4pos') || isempty(par.layer4pos) 
     par.layer4pos = ceil(par.Nlayers/2);

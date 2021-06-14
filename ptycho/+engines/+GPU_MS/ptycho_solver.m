@@ -180,7 +180,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
      
     %% GEOMETRICAL CORRECTIONS        
     if (iter > par.probe_position_search || iter > par.detector_rotation_search) && is_method(par, {'PIE', 'ML'})
-        self = find_geom_correction(self,cache,par,iter,mode_id, update_position_weight);
+        self = find_geom_correction(self,cache,par,iter,mode_id,update_position_weight);
         % Added by YJ
         if mod(iter-par.probe_position_search+1, par.update_pos_weight_every) == 0
             update_position_weight = true;
@@ -193,23 +193,23 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         for kk = 1:par.Nscans
             ind = self.reconstruct_ind{kk};
             self.modes{1}.probe_fourier_shift(ind,:) = self.modes{1}.probe_fourier_shift(ind,:) - mean(self.modes{1}.probe_fourier_shift(ind,:));
-        end    
+        end
     end
-        
-    %% remove ambiguity related to the variable probe 
+    
+    %% remove ambiguity related to the variable probe
     if par.variable_probe && iter > par.probe_change_start && is_method(par, 'ML')
          self = remove_variable_probe_ambiguities(self,par); 
     end
 
-   %% remove the ambiguity in the probe / object reconstruction => keep average object transmission around 1
-   if  mod(iter,10)==1 &&  par.remove_object_ambiguity  && ~is_used(par, {'fly_scan'}) &&  ~is_method(par, {'DM', 'PIE'})  % too slow for variable probe 
+    %% remove the ambiguity in the probe / object reconstruction => keep average object transmission around 1
+    if  mod(iter,10)==1 &&  par.remove_object_ambiguity  && ~is_used(par, {'fly_scan'}) &&  ~is_method(par, {'DM', 'PIE'})  % too slow for variable probe 
         self = remove_object_ambiguity(self, cache, par) ; 
-   end
-   
+    end
+
     if (mod(iter, 10) == 1 || iter  < 5) && check_option(par, 'get_fsc_score')   && ...
        (((par.Nscans > 1 ) && size(self.object,1) == par.Nscans) || ... 
        ( check_option(self, 'object_orig') ))
-            
+
         %% Fourier ring correlation between two scans with independend objects 
         aux = online_FSC_estimate(self, par, cache, fsc_score(end,:), iter); 
         fsc_score(end+1,1:size(aux,1), 1:size(aux,2)) = aux; 
@@ -283,7 +283,7 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         case { 'mls','mlc'}
             [self, cache, fourier_error] = engines.GPU_MS.LSQML(self,par,cache,fourier_error,iter);
         case 'dm'
-            [self, cache,psi_dash,fourier_error] =  engines.GPU_MS.DM(self,par,cache,psi_dash,fourier_error,iter);
+            [self, cache,psi_dash,fourier_error] = engines.GPU_MS.DM(self,par,cache,psi_dash,fourier_error,iter);
         otherwise
             error('Not implemented method')
     end
@@ -354,42 +354,47 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
             end
         end
     end
-
     
     %% suppress uncontrained values !! 
     if iter > par.object_change_start && par.object_regular(1) > 0
-        %for ll = 1:max(par.object_modes, par.Nscans) %old          
-        for ll = 1:par.Nlayers % Added by ZC. quick fix for multilayer, but does not work for multiple scans or modes,  
-            self.object{ll} = apply_smoothness_constraint(self.object{ll},par.object_regular(1)); % blur only intensity, not phase 
+        for kk = 1:par.Nscans
+            for ll = 1:par.Nlayers
+                self.object{kk,ll} = apply_smoothness_constraint(self.object{kk,ll},par.object_regular(1)); % blur only intensity, not phase 
+            end
         end
     end
     
      %% Added by YJ. TV regularization on object
-    if iter > par.object_change_start  && isfield(par,'TV_lambda') && par.TV_lambda > 0
+    if iter > par.object_change_start && isfield(par,'TV_lambda') && par.TV_lambda > 0
         N_tv_iter = 10;
-        for ll = 1:par.Nlayers
-            self.object{ll} = local_TV2D_chambolle(self.object{ll}, par.TV_lambda, N_tv_iter);
-         %self.object{ll}(cache.object_ROI{:}) = ...
-         %    Gfun(@local_TV2D_chambolle,self.object{ll}(cache.object_ROI{:}), par.TV_lambda, N_tv_iter);
+        for kk = 1:par.Nscans
+            for ll = 1:par.Nlayers
+                self.object{kk,ll} = local_TV2D_chambolle(self.object{kk,ll}, par.TV_lambda, N_tv_iter);
+             %self.object{ll}(cache.object_ROI{:}) = ...
+             %    Gfun(@local_TV2D_chambolle,self.object{ll}(cache.object_ROI{:}), par.TV_lambda, N_tv_iter);
+            end
         end
     end
     
     %% suppress large amplitude of object, Added by ZC
-    if iter >= par.object_change_start && par.amplitude_threshold_object < inf 
-        for ll=1:par.Nlayers
-            temp = abs(self.object{ll});
-            temp (temp > par.amplitude_threshold_object) = 1;
-            self.object{ll} = temp.* exp(1i* angle(self.object{ll}));
+    if iter >= par.object_change_start && par.amplitude_threshold_object < inf
+        for kk = 1:par.Nscans
+            for ll = 1:par.Nlayers
+                temp = abs(self.object{kk,ll});
+                temp (temp > par.amplitude_threshold_object) = 1;
+                self.object{kk,ll} = temp.* exp(1i* angle(self.object{kk,ll}));
+            end
         end
     end
     
     %% weak positivity object 
-    if iter > par.object_change_start  && any(par.positivity_constraint_object)
-        for ll = 1:par.Nlayers 
-        %for ll = 1:par.object_modes
-             self.object{ll}(cache.object_ROI{:}) = ...
-                 Gfun(@positivity_constraint_object,self.object{ll}(cache.object_ROI{:}), par.positivity_constraint_object);
-         end
+    if iter > par.object_change_start && any(par.positivity_constraint_object)
+        for kk = 1:par.Nscans
+            for ll = 1:par.Nlayers 
+                 self.object{kk,ll}(cache.object_ROI{:}) = ...
+                     Gfun(@positivity_constraint_object,self.object{kk,ll}(cache.object_ROI{:}), par.positivity_constraint_object);
+            end
+        end
     end
     
     %% probe orthogonalization 
@@ -816,6 +821,3 @@ function win = get_window(Np_p, scale, ax)
     win = shiftdim(win, 1-ax);
     win = Garray(win);
 end
-
-
- 

@@ -202,7 +202,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
             self.modes{1}.probe_fourier_shift(ind,:) = self.modes{1}.probe_fourier_shift(ind,:) - mean(self.modes{1}.probe_fourier_shift(ind,:));
         end    
     end
-        
+    
     %% remove ambiguity related to the variable probe 
     if par.variable_probe && iter > par.probe_change_start && is_method(par, 'ML')
          self = remove_variable_probe_ambiguities(self,par); 
@@ -357,46 +357,54 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
              
     %% suppress uncontrained values !! 
     if iter > par.object_change_start && par.object_regular(1) > 0
-        for ll = 1:max(par.object_modes, par.Nscans)
-            self.object{ll} = apply_smoothness_constraint(self.object{ll},par.object_regular(1)); % blur only intensity, not phase 
+        for kk = 1:par.Nscans
+            for ll = 1:max(par.object_modes)
+                self.object{kk,ll} = apply_smoothness_constraint(self.object{kk,ll},par.object_regular(1)); % blur only intensity, not phase 
+            end
         end
     end
     
     %% Added by YJ. Remove grid artifacts using Fourier windows
-    if iter > par.object_change_start && all(par.rm_grid_artifact_step_size) 
-        for ll = 1:par.object_modes
-            object_temp = self.object{ll};
-            object_temp_ph = angle(object_temp);
-            object_temp_ph_roi = object_temp_ph(cache.object_ROI{:}); % only use the object region
+    if iter > par.object_change_start && all(par.rm_grid_artifact_step_size)
+        for kk = 1:par.Nscans
+            for ll = 1:par.object_modes
+                object_temp = self.object{kk,ll};
+                object_temp_ph = angle(object_temp);
+                object_temp_ph_roi = object_temp_ph(cache.object_ROI{:}); % only use the object region
 
-            step_size = par.rm_grid_artifact_step_size;
-            window_size = par.rm_grid_artifact_window_size;
-            direction = par.rm_grid_artifact_direction;
-            
-            object_temp_ph_roi = remove_grid_artifact(object_temp_ph_roi, self.pixel_size(1), step_size, window_size, direction, false);
-            object_temp_ph(cache.object_ROI{:}) = object_temp_ph_roi;
-            self.object{ll} = abs(object_temp).*exp(1i.*object_temp_ph);
+                step_size = par.rm_grid_artifact_step_size;
+                window_size = par.rm_grid_artifact_window_size;
+                direction = par.rm_grid_artifact_direction;
+
+                object_temp_ph_roi = remove_grid_artifact(object_temp_ph_roi, self.pixel_size(1), step_size, window_size, direction, false);
+                object_temp_ph(cache.object_ROI{:}) = object_temp_ph_roi;
+                self.object{kk,ll} = abs(object_temp).*exp(1i.*object_temp_ph);
+            end
         end
     end
     
     %% Added by YJ. TV regularization on object
-    if iter > par.object_change_start  && isfield(par,'TV_lambda') && par.TV_lambda > 0
+    if iter > par.object_change_start && isfield(par,'TV_lambda') && par.TV_lambda > 0
         N_tv_iter = 10;
-        for ll = 1:par.object_modes
-            self.object{ll} = local_TV2D_chambolle(self.object{ll}, par.TV_lambda, N_tv_iter);
-         %self.object{ll}(cache.object_ROI{:}) = ...
-         %    Gfun(@local_TV2D_chambolle,self.object{ll}(cache.object_ROI{:}), par.TV_lambda, N_tv_iter);
+        for kk = 1:par.Nscans
+            for ll = 1:par.object_modes
+                self.object{kk,ll} = local_TV2D_chambolle(self.object{kk,ll}, par.TV_lambda, N_tv_iter);
+             %self.object{ll}(cache.object_ROI{:}) = ...
+             %    Gfun(@local_TV2D_chambolle,self.object{ll}(cache.object_ROI{:}), par.TV_lambda, N_tv_iter);
+            end
         end
     end
     %% weak positivity object 
-    if iter > par.object_change_start  && any(par.positivity_constraint_object)
-         for ll = 1:par.object_modes
-             self.object{ll}(cache.object_ROI{:}) = ...
-                 Gfun(@positivity_constraint_object,self.object{ll}(cache.object_ROI{:}), par.positivity_constraint_object);
-         end
+    if iter > par.object_change_start && any(par.positivity_constraint_object)
+        for kk = 1:par.Nscans
+            for ll = 1:par.object_modes
+                self.object{kk,ll}(cache.object_ROI{:}) = ...
+                    Gfun(@positivity_constraint_object,self.object{kk,ll}(cache.object_ROI{:}), par.positivity_constraint_object);
+            end
+        end
     end
     
-    %% probe orthogonalization 
+    %% probe orthogonalization
     if par.probe_modes > par.Nrec && (~is_method(par, 'DM') || iter == par.number_iterations)
         %  orthogonalization of incoherent probe modes 
         if is_used(par, 'fly_scan')
@@ -421,13 +429,13 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
             end
         end
     end
-
-  %% regularize multilayer reconstruction 
-  if par.regularize_layers > 0 && par.Nlayers > 1 %  && mod(iter, 2) == 1
-        self = regulation_multilayers(self, par, cache);
-  end
     
-  %% PLOTTING 
+    %% regularize multilayer reconstruction 
+    if par.regularize_layers > 0 && par.Nlayers > 1 %  && mod(iter, 2) == 1
+        self = regulation_multilayers(self, par, cache);
+    end
+    
+    %% PLOTTING 
     %%%% plot  results %%%%%%%%%%%%
     if par.p.use_display && mod(iter, par.plot_results_every)==0 &&  par.plot_results_every~=0     
         try
@@ -441,7 +449,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
                     plot_probe_modes(self,par);                        
                 end
                 if (par.Nlayers > 1) || (par.Nscans > 1 && ~par.share_object)
-                    %% object incoherent modes 
+                    %% object incoherent modes
                     plot_object_modes(self, cache)
                 end
 

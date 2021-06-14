@@ -29,7 +29,7 @@ function self = regulation_multilayers(self, par, cache)
     alpha = 1; 
     Wa = W.*exp(-alpha*(grid{1}.^2 + grid{2}.^2));
     
-    for kk = 1:size(self.object,1)
+    for kk = 1:size(self.object,1) % par.Nscans
         %% Added by ZC. use CPU to save GPU memory if object is too big
         if  numel(self.object{kk,1}) * size(self.object,2) > Obj_size_limit && par.use_gpu
             object=cellfun(@gather, self.object(kk,:),'UniformOutput',false);
@@ -37,6 +37,7 @@ function self = regulation_multilayers(self, par, cache)
         else
             obj = cat(3, self.object{kk,:});
         end
+        % Note: size(obj) = [self.Np_o, par.Nlayers]
         %%
         % find correction for amplitude 
         aobj = abs(obj); 
@@ -48,7 +49,7 @@ function self = regulation_multilayers(self, par, cache)
         % find correction for phase 
         Wphase = min(1, 10*(cache.illum_sum_0{kk}/cache.MAX_ILLUM(kk))); 
         if numel(obj) > Obj_size_limit && par.use_gpu % Added by ZC to save memory
-        	Wphase=gather(Wphase);          
+        	Wphase=gather(Wphase);
         end
         pobj = math.unwrap2D_fft2(obj,[],0,Wphase,-1);
         fobj = (fftn((pobj))); 
@@ -69,5 +70,5 @@ function [obj,corr] =  regulation_multilayers_kernel(obj, aobj,aobj_upd, pobj, p
   pobj_upd = weights.*(real(pobj_upd) - pobj); 
   corr = (1+relax*aobj_upd) .* exp(1i*relax*pobj_upd); 
   obj = obj .* corr; 
-end        
+end
   
