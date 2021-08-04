@@ -469,7 +469,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
                 hold all
                 for ll = 1:par.Nmodes    
                     plot(self.modes{ll}.probe_fourier_shift)
-                end    
+                end
                 hold off
                 grid on 
                 axis tight
@@ -661,6 +661,43 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
                 saveDir = strcat(par.fout,'/obj_phase_roi_stack/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
                 imExportTiff(O_phase_roi,strcat(saveDir,saveName),'XY');
+            end
+        end
+        
+        %% save object magnitude
+        if any(ismember({'obj_mag','obj_ph_sum','obj_mag_stack'}, par.save_images))
+            object_temp = Ggather(self.object{1});
+            object_roi_temp = object_temp(cache.object_ROI{:},:);
+            N_obj_roi = size(object_roi_temp);
+            O_mag_roi = zeros(N_obj_roi(1), N_obj_roi(2), par.Nlayers);
+            for ll=1:par.Nlayers
+                object_temp = Ggather(self.object{ll});
+               	O_mag_roi(:,:,ll) = abs(object_temp(cache.object_ROI{:}));
+            end
+            if ismember('obj_mag_sum', par.save_images)
+                O_mag_roi_sum = prod(O_mag_roi,3);
+                saveName = strcat('obj_mag_roi_sum_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/obj_mag_roi_sum/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                save_tiff_image(O_mag_roi_sum,strcat(saveDir,saveName));
+            end
+            if ismember('obj_mag', par.save_images)
+                O_mag_roi2 = zeros(N_obj_roi(1), N_obj_roi(2)*par.Nlayers);
+                for ll=1:par.Nlayers
+                    x_lb = (ll-1)*N_obj_roi(2)+1;
+                    x_ub = ll*N_obj_roi(2);
+                    O_mag_roi2(:,x_lb:x_ub) = O_mag_roi(:,:,ll);
+                end
+                saveName = strcat('obj_mag_roi_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/obj_mag_roi/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                save_tiff_image(O_mag_roi2,strcat(saveDir,saveName));
+            end
+            if ismember('obj_mag_stack', par.save_images)
+                saveName = strcat('obj_mag_roi_Niter',num2str(iter),'.tiff');
+                saveDir = strcat(par.fout,'/obj_mag_roi_stack/');
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                imExportTiff(O_mag_roi,strcat(saveDir,saveName),'XY');
             end
         end
         
