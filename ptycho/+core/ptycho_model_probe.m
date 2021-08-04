@@ -21,7 +21,8 @@ end
 
 % Prepare probe
 if p.model_probe
-    % STEM probe
+    % STEM probe: based on Eq.(2.10) in Advanced Computing in Electron 
+    % Microscopy (2nd edition) by Dr.Kirkland
     if isfield(p,'beam_source') && strcmp(p.beam_source, 'electron')
         df = p.model.probe_df;
         alpha_max = p.model.probe_alpha_max;
