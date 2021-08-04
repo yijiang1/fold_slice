@@ -1,7 +1,7 @@
 function [probe, mask] = make_tem_probe(dx, N, param)
 %MAKE_TEM_PROBE Generate probe functions produced by object lens in 
 % transmission electron microscope.
-% Written by Yi Jiang dased on Eq.(2.10) in Advanced Computing in Electron 
+% Written by Yi Jiang based on Eq.(2.10) in Advanced Computing in Electron 
 % Microscopy (2nd edition) by Dr.Kirkland
 % 
 % Outputs:

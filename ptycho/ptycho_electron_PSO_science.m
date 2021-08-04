@@ -136,7 +136,19 @@ p.   model.object_type = 'rand';                            % specify how the ob
 p.   initial_iterate_object_file{1} = '';                   %  use this mat-file as initial guess of object, it is possible to use wild characters and pattern filling, example: '../analysis/S%05i/wrap_*_1024x1024_1_recons*'
 
 % Initial iterate probe
-p.   model_probe = false;                                    % Use model probe, if false load it from file 
+p.   model_probe = false;                                   % Use model probe, if false load it from file 
+p.   model.probe_alpha_max = 21.4;                          % Modal STEM probe's aperture size
+p.   model.probe_df = -200;                                 % Modal STEM probe's defocus
+p.   model.probe_c3 = 0;                                    % Modal STEM probe's third-order spherical aberration in angstrom (optional)
+p.   model.probe_c5 = 0;                                    % Modal STEM probe's fifth-order spherical aberration in angstrom (optional)
+p.   model.probe_c7 = 0;                                    % Modal STEM probe's seventh-order spherical aberration in angstrom (optional)
+p.   model.probe_f_a2 = 0;                                  % Modal STEM probe's twofold astigmatism in angstrom (optional)
+p.   model.probe_theta_a2 = 0;                              % Modal STEM probe's twofold azimuthal orientation in radian (optional)
+p.   model.probe_f_a3 = 0;                                  % Modal STEM probe's threefold astigmatism in angstrom (optional)
+p.   model.probe_theta_a3 = 0;                              % Modal STEM probe's threefold azimuthal orientation in radian (optional)
+p.   model.probe_f_c3 = 0;                                  % Modal STEM probe's coma in angstrom (optional)
+p.   model.probe_theta_c3 = 0;                              % Modal STEM probe's coma azimuthal orientation in radian (optional)
+
 %Use probe from this mat-file (not used if model_probe is true)
 p.   initial_probe_file = initial_probe_file;
 p.   probe_file_propagation = 0.0e-3;                            % Distance for propagating the probe from file in meters, = 0 to ignore
