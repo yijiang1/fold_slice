@@ -108,7 +108,7 @@ if p.model_probe
                 w = w .*(1-fftshift(filt2d_pad(upsample*asize(1), round(r2_pix)+2, round(r2_pix-2), 'circ')));
             end
             if isfield(p.model,'probe_structured_illum_power') && p.model.probe_structured_illum_power
-                rng default
+                %rng default
                 r = utils.imgaussfilt2_fft(randn(upsample*p.asize),upsample*2); 
                 r = r / math.norm2(r); 
                 r = exp(1i*r*p.model.probe_structured_illum_power);
