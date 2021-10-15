@@ -97,7 +97,7 @@ if Nsets == 1 && grouping >= self.Npos
     return
 end
 
-rng default
+%rng default
 
 for kk = 1:Nsets
     % take them sequentially but with random offset 
@@ -243,7 +243,7 @@ verbose(0,'=== Position clusters found in %i iterations in %3.2gs', iter, cluste
 verbose(0,'=== Position clusters refined in %i iterations in %3.2gs', iter, cluster_refinement_time)
 
 
-rng shuffle 
+%rng shuffle 
 
 if verbose()  > 1 && Ngroups_sizes > 1
     warning('Unequal group sizes, it may cause slower calculation')

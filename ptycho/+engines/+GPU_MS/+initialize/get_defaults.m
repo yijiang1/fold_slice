@@ -52,7 +52,6 @@ function [param] = get_defaults
     param.background_detection = false; 
     param.background_width = inf;
 
-    
     %% ADVANCED OPTIONS   
     
     param.object_regular =  [0, 0]; %  enforce smoothness !!!, use between [0-0.1 ]
@@ -112,8 +111,8 @@ function [param] = get_defaults
     % fly scans 
     param.flyscan_offset = 0; 
     param.flyscan_dutycycle = 1;
-    rng('default');
-    rng('shuffle');
+    %rng('default');
+    %rng('shuffle');
 
     % convergence check - stop reconstruction if fourier error is larger than the previous one by given (relative) threshold. 
     param.fourier_error_threshold = inf; % default: no convergence check.

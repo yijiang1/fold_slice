@@ -110,8 +110,8 @@ function [param] = get_defaults
     param.rm_grid_artifact_window_size = [5,5];     % window size in the [horizontal, vertical] directions
     param.rm_grid_artifact_direction = 'xy';        % filter directions: 'x' (horizontal), 'y' (vertical), or 'xy' (default)
 
-    rng('default');
-    rng('shuffle');
+    %rng('default');
+    %rng('shuffle');
     
     % convergence check - stop reconstruction if fourier error is larger than the previous one by given (relative) threshold. 
     param.fourier_error_threshold = inf; % default: no convergence check.
