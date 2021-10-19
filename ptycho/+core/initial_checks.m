@@ -135,6 +135,10 @@ elseif any(strcmpi(p.prepare.data_preparator, {'matlab', 'matlab_ps','mex'}))
 elseif any(strcmpi(p.prepare.data_preparator, {'matlab_aps'})) %% adde by YJ
     p.prepare.data_preparator = 'matlab_aps';
     verbose(3, 'Using matlab APS data preparator.')
+elseif any(strcmpi(p.prepare.data_preparator, {'matlab_aps_lynx'})) %% adde by YJ
+    p.prepare.data_preparator = 'matlab_aps_lynx';
+    verbose(3, 'Using matlab APS-LYNX data preparator.')
+
 else
     error('Unknown data preparator %s', p.prepare.data_preparator);
 end
@@ -159,9 +163,11 @@ else
 end
 
 % binning is only supported by Matlab data preparation
-if isfield(p.detector,'upsampling')&& p.detector.upsampling
-    %p.prepare.data_preparator = 'matlab_ps';
-    p.prepare.data_preparator = 'matlab_aps'; %modified by YJ for APS data
+if isfield(p.detector,'upsampling') && p.detector.upsampling
+    if strcmp(p.prepare.data_preparator,'matlab_ps')
+        %p.prepare.data_preparator = 'matlab_ps';
+        p.prepare.data_preparator = 'matlab_aps'; %modified by YJ for APS data
+    end
     verbose(1, 'Using data upsampling %ix%i, switching to matlab data loading', 2^p.detector.upsampling, 2^p.detector.upsampling)
 else
     p.detector.upsampling = false; 
