@@ -1,4 +1,4 @@
-function ellipse_fit_positions(samposx,samposy,scans,lamni_fit_file)
+function ellipse_fit_positions(samposx,samposy,scans,lamni_fit_file,bath_path)
 
 % addpath ../
 % 
@@ -20,7 +20,7 @@ plot(samposx,samposy,'o')
 if exist('lamni_fit_file')
     [~,lamni_name,~] = fileparts(lamni_fit_file);
     %theta = prepare.read_angles_from_position_files('~/specES1/scan_positions/scan_%05d.dat',scans);
-    theta = prepare.read_angles_from_position_files('/mnt/micdata2/lamni/2020-2/comm_33IDD_2/specES1/scan_positions/scan_%05d.dat',scans);
+    theta = prepare.read_angles_from_position_files(strcat(bath_path,'/scan_positions/scan_%05d.dat'),scans);
     
     theta_interp = [min(theta)-1:max(theta)+1];
     
