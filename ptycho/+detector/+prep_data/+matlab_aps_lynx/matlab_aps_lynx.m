@@ -38,9 +38,13 @@ p = detector.prep_data.matlab_aps_lynx.prep_data_matlab(p, data, fmask);
 num_difpat = size(p.fmag,3);
 verbose(2, 'Number of probe positions: %d', sum(p.numpts));
 verbose(2, 'Number of diffraction patterns : %d', num_difpat);
+
+%quick fix for fly-scan data
+%only works if # of diffraction patterns >= # of scan points
+%{
 if num_difpat ~= sum(p.numpts)
     error('Number of probe positions (%d) inconsistent with number of diffraction patterns (%d)', sum(p.numpts), num_difpat);
 end
-
+%}
 
 end

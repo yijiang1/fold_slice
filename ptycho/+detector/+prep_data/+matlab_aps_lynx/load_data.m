@@ -35,9 +35,12 @@ catch
     error('Failed to load dp from %s', files{p.scanID});
 end
 data = single(squeeze(data));
-%data = (squeeze(data));
 
 data = data(detStorage.lim_inf(2):detStorage.lim_sup(2),detStorage.lim_inf(1):detStorage.lim_sup(1),:);
+
+%quick fix for bad detector readouts
+data(data<0) = 0;
+data(data>1e9) = 0;
 
 utils.verbose(2, strcat('Loaded data from:', files{p.scanID}))
 
