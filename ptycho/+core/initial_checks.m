@@ -19,7 +19,7 @@ import io.*
 %%%%%%%%%%%%%
 
 % check matlab version
-check_matlab_version(9.3);
+check_matlab_version('9.3');
 
 if ~isfield(p, 'use_display') || isempty(p.use_display)
     if verbose > 1
