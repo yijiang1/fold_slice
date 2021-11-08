@@ -20,7 +20,6 @@ function [self,par] = check_inputs(self, par)
 par.Nrec  = 1;
 par.Nscans = length(self.reconstruct_ind);
 
-
 if ischar(par.extension)
     par.extension = {par.extension};
 end
@@ -38,7 +37,6 @@ if any(self.Np_p ~= Np_d(1:2)) % && isempty(self.modF_ROI)
     error('Size of probe and data is different')
 end
 
-
 tmp = self.diffraction(1:self.Np_p(1)*7:end);  % get some small sample 
 tmp = tmp * 2^(par.upsampling_data_factor*2); % remove upsampling effects 
 if par.compress_data && max(abs((tmp - round(tmp)))) > 0.2
@@ -47,20 +45,16 @@ if par.compress_data && max(abs((tmp - round(tmp)))) > 0.2
 end
 
 %%%%%%%%%%%%% accelerated solver %%%%%%%%%%%%%%%%%%%
-
 if  par.accelerated_gradients_start < par.number_iterations && ~is_method(par, 'MLs')
     verbose(3, 'accelerated_gradients_start < number_iterations	 is supported only for MLc engine')
     par. accelerated_gradients_start = inf; 
 end
 
-
 % if  par.accelerated_gradients_start < par.number_iterations && par.momentum > 0 && is_method(par, 'ML')
 %     error('accelerated_gradients_start < inf cannot be used if momemtum > 0 ')
 % end
 
-
 %%%%%%%%%%%%% variable probe %%%%%%%%%%%%%%%%%%%%%%%%
-
 if ~par.variable_probe
     par.variable_probe_modes = 0; 
 end
@@ -69,7 +63,6 @@ if par.variable_probe && par.variable_probe_modes  > 0 && ~is_method(par, {'PIE'
     warning('Variable probe implemented only for PIE and ML')
     par.variable_probe = false;
 end
-
 
 if par.variable_probe &&  par.variable_probe_modes == 0 
     error('Choose more than 0 variable_probe_modes for OPRP')
@@ -81,15 +74,14 @@ if par.variable_probe && ~par.share_probe && is_method(par, 'PIE')
     % variable probe means automatically shared variable probe 
 end
 
-
 if ~is_method(par, {'PIE', 'ML'}) && strcmpi(par.likelihood, 'poisson')
     warning('Poisson likelihood supported only for PIE methods')
     par.likelihood = 'L1';
 end
+
 if ~ismember(lower( par.likelihood), {'l1','poisson'})
     error('Unsupported error estimation')
 end
-
    
 %%%%%%%%%%%%%% check if position correction is allowed 
 if ~ is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_iterations
@@ -141,11 +133,9 @@ if is_used(par, 'fly_scan')
 end
 
 %%%%%%%% nearfield %%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 if par.estimate_NF_distance < par.number_iterations && isinf(self.z_distance(end))
     error('estimate_NF_distance valid only for nearfield mode')
 end
-
 
 %%%%%%%%%%%%%%% OTHER %%%%%%%%%%%%%%%%%%%%
 if strcmpi(par.likelihood, 'poisson') && par.background_detection && ~isinf(par.background_detection)
@@ -153,16 +143,14 @@ if strcmpi(par.likelihood, 'poisson') && par.background_detection && ~isinf(par.
 end
 
 if prod(self.Np_p) *self.Npos >  intmax('int32') && par.keep_on_gpu && is_method(par, {'MLs', 'ePIE'})
-    warning('Dataset as more than 2147483647 elements (max of int32), in case of problems try par.keep_on_gpu = false')
+    warning('Dataset as more than 2147483647 elements (max of int32). Set par.keep_on_gpu to false')
+    par.keep_on_gpu = false;
 end
-
-
 
 if any(self.noise(:) == 0) && par.relax_noise
     warning('Some values of expected noise are 0')
     self.noise = max(0.5, self.noise); 
 end
-
 
 if par.Nrec > max([par.Nmodes, par.probe_modes , par.object_modes])
     warning('Number of modes is too high')
@@ -172,7 +160,6 @@ if length(self.probe_positions) ~= self.Npos
    self.probe_positions = [];
 end
 
-
 if par.mirror_objects && par.Nscans ~= 2 
     error('Object mirroring is supported only for two scans')
 end
@@ -181,11 +168,10 @@ end
 if ~is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_iterations
     warning('Position corrections works only for PIE/ML methods')
 end
+
 if is_method(par, {'PIE', 'ML'}) && par.probe_position_search< par.number_iterations && ~(par.apply_subpix_shift || is_used(par,'fly_scan'))
    verbose(2,'Subpixel shifting is strongly recommended for position refinement => enforcing par.apply_subpix_shift = true') 
    par.apply_subpix_shift = true; 
 end
-
-    
 
 end
