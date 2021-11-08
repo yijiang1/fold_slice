@@ -25,11 +25,11 @@ if ischar(par.extension)
 end
 
 for ii = 1:numel(self.object)
-   assert(all(isfinite(self.object{ii}(:))), 'Provided object contains nan / inf')
+	assert(all(isfinite(self.object{ii}(:))), 'Provided object contains nan / inf')
 end
 
 for ii = 1:numel(self.probe)
-   assert(all(isfinite(self.probe{ii}(:))), 'Provided probes contain nan / inf')
+	assert(all(isfinite(self.probe{ii}(:))), 'Provided probes contain nan / inf')
 end
 
 Np_d =  size(self.diffraction);
@@ -65,7 +65,7 @@ if par.variable_probe && par.variable_probe_modes  > 0 && ~is_method(par, {'PIE'
 end
 
 if par.variable_probe &&  par.variable_probe_modes == 0 
-    error('Choose more than 0 variable_probe_modes for OPRP')
+	error('Choose more than 0 variable_probe_modes for OPRP')
     par.variable_probe_modes = 1; 
 end
 
@@ -85,13 +85,13 @@ end
    
 %%%%%%%%%%%%%% check if position correction is allowed 
 if ~ is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_iterations
-    verbose(2, 'Position correction supported only for PIE/ML methods ')
+	verbose(2, 'Position correction supported only for PIE/ML methods ')
     par.probe_position_search = inf; 
 end
 
 if any(~ismember(par.probe_geometry_model, {'scale', 'asymmetry', 'rotation', 'shear'}))
-   missing_option = setdiff(par.probe_geometry_model, {'scale', 'asymmetry', 'rotation', 'shear'} ); 
-   error('Unsupported geometry model option:  "%s"', missing_option{1}) 
+	missing_option = setdiff(par.probe_geometry_model, {'scale', 'asymmetry', 'rotation', 'shear'} ); 
+	error('Unsupported geometry model option:  "%s"', missing_option{1}) 
 end
 
 if par.probe_position_search < par.number_iterations && par.detector_scale_search < par.number_iterations && any(ismember(par.probe_geometry_model,'scale')) 
@@ -122,6 +122,7 @@ end
 if is_used(par, 'fly_scan') && ~is_method(par, {'PIE', 'ML'})
     error('Fly scan is  supported only for PIE/ML methods')
 end
+
 if is_used(par, 'fly_scan')
     if par.Nmodes == 1
         warning('Flyscan has no effect with a single mode')
@@ -157,11 +158,11 @@ if par.Nrec > max([par.Nmodes, par.probe_modes , par.object_modes])
 end
 
 if length(self.probe_positions) ~= self.Npos
-   self.probe_positions = [];
+    self.probe_positions = [];
 end
 
 if par.mirror_objects && par.Nscans ~= 2 
-    error('Object mirroring is supported only for two scans')
+	error('Object mirroring is supported only for two scans')
 end
 
 %%%%%% position correction %%%%% 
@@ -169,9 +170,9 @@ if ~is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_iter
     warning('Position corrections works only for PIE/ML methods')
 end
 
-if is_method(par, {'PIE', 'ML'}) && par.probe_position_search< par.number_iterations && ~(par.apply_subpix_shift || is_used(par,'fly_scan'))
-   verbose(2,'Subpixel shifting is strongly recommended for position refinement => enforcing par.apply_subpix_shift = true') 
-   par.apply_subpix_shift = true; 
+if is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_iterations && ~(par.apply_subpix_shift || is_used(par,'fly_scan'))
+    verbose(2,'Subpixel shifting is strongly recommended for position refinement => enforcing par.apply_subpix_shift = true') 
+	par.apply_subpix_shift = true; 
 end
 
 end

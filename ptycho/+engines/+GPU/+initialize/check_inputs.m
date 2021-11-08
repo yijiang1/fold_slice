@@ -25,7 +25,7 @@ if ischar(par.extension)
 end
 
 for ii = 1:numel(self.object)
-   assert(all(isfinite(self.object{ii}(:))), 'Provided object contains nan / inf')
+	assert(all(isfinite(self.object{ii}(:))), 'Provided object contains nan / inf')
 end
 
 for ii = 1:numel(self.probe)
@@ -40,7 +40,7 @@ end
 tmp = self.diffraction(1:self.Np_p(1)*7:end);  % get some small sample 
 tmp = tmp * 2^(par.upsampling_data_factor*2); % remove upsampling effects 
 if par.compress_data && max(abs((tmp - round(tmp)))) > 0.2
-    verbose(1,'Data are not integers, cannot use compression')
+	verbose(1,'Data are not integers, cannot use compression')
     par.compress_data = false;
 end
 
@@ -90,12 +90,12 @@ if ~ is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_ite
 end
 
 if any(~ismember(par.probe_geometry_model, {'scale', 'asymmetry', 'rotation', 'shear'}))
-   missing_option = setdiff(par.probe_geometry_model, {'scale', 'asymmetry', 'rotation', 'shear'} ); 
-   error('Unsupported geometry model option:  "%s"', missing_option{1}) 
+	missing_option = setdiff(par.probe_geometry_model, {'scale', 'asymmetry', 'rotation', 'shear'} ); 
+	error('Unsupported geometry model option:  "%s"', missing_option{1}) 
 end
 
 if par.probe_position_search < par.number_iterations && par.detector_scale_search < par.number_iterations && any(ismember(par.probe_geometry_model,'scale')) 
-    error('Do not use probe_position_search with probe_geometry_model==''scale'' and detector_scale_search together')
+	error('Do not use probe_position_search with probe_geometry_model==''scale'' and detector_scale_search together')
 end
 
 %%%%%% checks for the multilayer method  %%%%%%%%%%%%%%%%
@@ -119,7 +119,7 @@ if is_used(par, 'fly_scan') && ~is_method(par, {'PIE', 'ML'})
 end
 if is_used(par, 'fly_scan')
     if par.Nmodes == 1
-        warning('Flyscan has no effect with a single mode')
+    	warning('Flyscan has no effect with a single mode')
         par.extension = setdiff(par.extension, 'fly_scan');
         par.apply_subpix_shift= true;
     end
@@ -134,7 +134,7 @@ end
 
 %%%%%%%%%%%%%%% OTHER %%%%%%%%%%%%%%%%%%%%
 if strcmpi(par.likelihood, 'poisson') && par.background_detection && ~isinf(par.background_detection)
-    error('Background detection does not work well with Poisson likelihood')
+	error('Background detection does not work well with Poisson likelihood')
 end
 
 if prod(self.Np_p) *self.Npos >  intmax('int32') && par.keep_on_gpu && is_method(par, {'MLs', 'ePIE'})
@@ -148,11 +148,11 @@ if any(self.noise(:) == 0) && par.relax_noise
 end
 
 if par.Nrec > max([par.Nmodes, par.probe_modes , par.object_modes])
-    warning('Number of modes is too high')
+	warning('Number of modes is too high')
 end
 
 if length(self.probe_positions) ~= self.Npos
-   self.probe_positions = [];
+	self.probe_positions = [];
 end
 
 if par.mirror_objects && par.Nscans ~= 2 
@@ -163,9 +163,10 @@ end
 if ~is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_iterations
     warning('Position corrections works only for PIE/ML methods')
 end
-if is_method(par, {'PIE', 'ML'}) && par.probe_position_search< par.number_iterations && ~(par.apply_subpix_shift || is_used(par,'fly_scan'))
-   verbose(2,'Subpixel shifting is strongly recommended for position refinement => enforcing par.apply_subpix_shift = true') 
-   par.apply_subpix_shift = true; 
+
+if is_method(par, {'PIE', 'ML'}) && par.probe_position_search < par.number_iterations && ~(par.apply_subpix_shift || is_used(par,'fly_scan'))
+	verbose(2,'Subpixel shifting is strongly recommended for position refinement => enforcing par.apply_subpix_shift = true') 
+	par.apply_subpix_shift = true; 
 end
 
 end
