@@ -29,13 +29,7 @@ for ii = 1:numel(self.object)
 end
 
 for ii = 1:numel(self.probe)
-    if par.N_wavelength > 1
-        for jj = 1:numel(self.probe{ii}) %multi-wavelength modes
-            assert(all(isfinite(self.probe{ii}{jj}(:))), 'Provided probes contain nan / inf')
-        end
-    else
-        assert(all(isfinite(self.probe{ii}(:))), 'Provided probes contain nan / inf')
-    end
+    assert(all(isfinite(self.probe{ii}(:))), 'Provided probes contain nan / inf')
 end
 
 Np_d =  size(self.diffraction);
