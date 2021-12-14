@@ -426,7 +426,9 @@ function [self, param, p] = load_from_p(param, p)
     % if requested, shift the average probe to center and shift the object
     % to correspond to the probe shift
     if check_option(p, 'auto_center_probe')
-        [x,y] = center(mean(abs(self.probe{1}(:,:,:,1)))); 
+        verbose(1, 'Shift probe to center')
+        %[x,y] = center(mean(abs(self.probe{1}(:,:,:,1))));
+        [x,y] = center(abs(self.probe{1}(:,:,1,1)));
         for ii = 1:numel(self.probe)
             self.probe{ii} = imshift_fft(self.probe{ii}, -x,-y);
         end
