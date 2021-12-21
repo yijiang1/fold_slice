@@ -31,13 +31,10 @@
 function [optimal_shift,params, rec, err] = ...
             align_tomo_consistency_linear(sinogram,weights, angles, Npix, optimal_shift, params, varargin )
     
-
-
     import tomo.*
     import utils.*
     import math.*
     utils.verbose(struct('prefix', 'align'))
-
 
     parser = inputParser;
     % general  parameters 
@@ -55,6 +52,7 @@ function [optimal_shift,params, rec, err] = ...
     parser.addParameter('use_GPU',  gpuDeviceCount > 0 , @islogical) % apply affine deformation on the projections 
     parser.addParameter('momentum_acceleration',  false , @islogical) % accelerate convergence by momentum gradient descent method 
     parser.addParameter('online_tomo',  false , @islogical)  % if true, dont expect any feedback from user  
+    parser.addParameter('use_GPU_find_shift',  true , @islogical) % apply affine deformation on the projections 
 
     % extra contraints 
     parser.addParameter('mask_threshold',  [] , @isnumeric ) % threshold for mask estimation 
@@ -89,11 +87,13 @@ function [optimal_shift,params, rec, err] = ...
     parser.addParameter('vert_range',  [] , @isnumeric) % vertical range considered for alignment for standard tomo 
     parser.addParameter('affine_matrix',  [] , @isnumeric) % apply affine deformation on the projections 
 
-    
     % plotting 
     parser.addParameter('plot_results_every',  10 , @isnumeric) % plot results every N seconds 
     parser.addParameter('position_update_smoothing',  0 , @isnumeric) % enforce smoothness of the updates, useful in the initial alignment 
     parser.addParameter('windowautopos',  true , @isnumeric) % automatically place the plotted windows 
+
+    % save intermediate results
+    parser.addParameter('save_path', '', @isstr) % save shifts 
 
     parser.parse(varargin{:})
     r = parser.Results;
@@ -252,7 +252,7 @@ function [optimal_shift,params, rec, err] = ...
         block_cfg = struct();
         keep_on_GPU = false; 
     end
-    %keep_on_GPU = false; 
+    %keep_on_GPU = false;
     block_cfg.verbose_level = utils.verbose();
     
     if  ~keep_on_GPU
@@ -279,7 +279,8 @@ function [optimal_shift,params, rec, err] = ...
     shift_velocity =  zeros(Nangles,2, 'single');
     shift_total =  zeros(Nangles,2, 'single');
     err = nan(1,Nangles,'single'); 
-    
+    optimal_shift_online = zeros(Nangles,2, 'single');
+
     time_plot = tic; 
     last_round = false; 
 
@@ -445,7 +446,6 @@ function [optimal_shift,params, rec, err] = ...
             end
         end
 
-        
         %% find shift of the data sinogram to match the "optimal sinogram"
         verbose(2,'Find optimal shift');
         if keep_on_GPU
@@ -454,6 +454,7 @@ function [optimal_shift,params, rec, err] = ...
             sinogram_shifted = Garray(sinogram_shifted); 
         else
             sinogram_model = gather(sinogram_model); 
+            sinogram_shifted = gather(sinogram_shifted); 
         end
         
         %% refine geometry 
@@ -469,11 +470,15 @@ function [optimal_shift,params, rec, err] = ...
             title('Top: model  Bottom:  filtered data')
         end
         %% find optimal shift 
-        try
-            [shift_upd, err(ii,:)] = tomo.block_fun(@find_optimal_shift,sinogram_model, sinogram_shifted,weights_shifted, MASS, par, block_cfg); 
-        catch err
-            disp(getReport(err))
-            keyboard
+        if par.use_GPU_find_shift
+            try
+                [shift_upd, err(ii,:)] = tomo.block_fun(@find_optimal_shift,sinogram_model, sinogram_shifted,weights_shifted, MASS, par, block_cfg); 
+            catch err
+                disp(getReport(err))
+                keyboard
+            end
+        else
+        	[shift_upd, err(ii,:)] = find_optimal_shift(sinogram_model, sinogram_shifted, weights_shifted, MASS, par); 
         end
         clear sinogram_model
         
@@ -558,6 +563,12 @@ function [optimal_shift,params, rec, err] = ...
         end
         time_per_iteration = toc(t0); 
         clear sinogram_shifted
+        
+        % save current shifts
+        if ~isempty(par.save_path)
+            optimal_shift_online(par.ang_order,:) = optimal_shift + (shift_total) * par.binning; 
+            save(strcat(par.save_path,'shift_online.mat'),'optimal_shift_online','err');
+        end
     end
 
     if ~par.is_interior_tomo
@@ -1116,6 +1127,6 @@ function plot_alignment(rec,  sinogram_shifted, weights_shifted, err,shift_upd,s
     colormap bone(1024)
     title('Current reconstruction')
     
-    drawnow 
+    drawnow
    
 end
