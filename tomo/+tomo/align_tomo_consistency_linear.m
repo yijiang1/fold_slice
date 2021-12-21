@@ -252,7 +252,7 @@ function [optimal_shift,params, rec, err] = ...
         block_cfg = struct();
         keep_on_GPU = false; 
     end
-    
+    %keep_on_GPU = false;
     block_cfg.verbose_level = utils.verbose();
     
     if  ~keep_on_GPU
@@ -445,14 +445,7 @@ function [optimal_shift,params, rec, err] = ...
                rethrow(myErr) 
             end
         end
-        %{
-        SE = strel('disk', 5);
-        sino_model_weights = tomo.block_fun(@tomo.estimate_reliability_region_grad, sinogram_model, 8, SE, block_cfg);
-        sino_model_weights = sum(sino_model_weights,3)>0;
-        for iii=1:size(weights_shifted,3)
-            weights_shifted(:,:,iii) = weights_shifted(:,:,iii) .* sino_model_weights;
-        end
-        %}
+
         %% find shift of the data sinogram to match the "optimal sinogram"
         verbose(2,'Find optimal shift');
         if keep_on_GPU
