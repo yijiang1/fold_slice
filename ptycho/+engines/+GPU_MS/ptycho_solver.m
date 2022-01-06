@@ -690,7 +690,8 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
                 saveName = strcat('obj_phase_roi_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/obj_phase_roi_stack/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                imExportTiff(O_phase_roi,strcat(saveDir,saveName),'XY');
+                par_tiff.name = strcat(saveDir,saveName);
+                save_tiff_image_stack(O_phase_roi, par_tiff);
             end
         end
         
@@ -727,7 +728,8 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
                 saveName = strcat('obj_mag_roi_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/obj_mag_roi_stack/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                imExportTiff(O_mag_roi,strcat(saveDir,saveName),'XY');
+                par_tiff.name = strcat(saveDir,saveName);
+                save_tiff_image_stack(O_mag_roi, par_tiff);
             end
         end
         
