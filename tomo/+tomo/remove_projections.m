@@ -37,8 +37,9 @@ function [stack_object,theta,total_shift,par] = remove_projections(stack_object,
 
     %%% Getting rid of unwanted projections %%%
     if ~isempty(which_remove)
-        
-        tomo.show_projections(stack_object(:,:,which_remove), theta(which_remove), par, ...
+        par_temp = par;
+        par_temp.scanstomo = par_temp.scanstomo(which_remove);
+        tomo.show_projections(stack_object(:,:,which_remove), theta(which_remove), par_temp, ...
             'title', 'Projection to be removed','plot_residua', true, 'title_extra', title_extra, 'fnct', plot_fnct, ...
             'rectangle_pos', [object_ROI{2}(1), object_ROI{2}(end), object_ROI{1}(1), object_ROI{1}(end)]) 
 
@@ -49,8 +50,7 @@ function [stack_object,theta,total_shift,par] = remove_projections(stack_object,
             theta(which_remove)=[];
             total_shift(which_remove,:) = [];
             par.scanstomo(which_remove)=[];
-            par.energy(which_remove,:) = [];
-            
+            try par.energy(which_remove,:) = []; end
             try par.nresidua_per_frame(which_remove) = []; end
             try par.subtomos(which_remove) = []; end
             try par.proj_file_names(which_remove) = []; end
