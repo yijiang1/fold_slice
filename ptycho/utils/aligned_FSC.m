@@ -1,4 +1,4 @@
-%   [resolution stat] = aligned_FSC(file1,file2,param)
+%   [resolution, stat, subim1, subim2] = aligned_FSC(file1,file2,param)
 %
 % Receives two filenames with path for ptychography reconstructions and a
 % structure with parameters. The routine reads the reconstructions, matches
@@ -55,7 +55,7 @@
 %  param.pixel_size    Pixel size in the reconstruction, it is used only
 %                       if file1 / file2 are not paths to the reconsturcted files  
 
-function [resolution,stat] = aligned_FSC(file1,file2,param)
+function [resolution,stat,subim1,subim2] = aligned_FSC(file1,file2,param)
 import utils.*
 import math.*
 import io.*
@@ -227,7 +227,7 @@ if isempty(param.apod)
     try 
         param.apod = io.HDF.hdf5_load(file{1}, '/reconstruction/p/plot/obj_apod');
     catch
-        warning('Unable to load apodization parameter from reconstruction file.')
+        %warning('Unable to load apodization parameter from reconstruction file.')
         param.apod = false;
     end
 end
@@ -331,8 +331,13 @@ elseif strcmpi(param.crop, 'manual')
     pause(1)
 end
 if ~isempty(param.crop)
-    img1 = img1(param.crop{:});
-    img2 = img2(param.crop{:});
+    if iscell(param.crop{1}) %different crop regions for different data
+        img1 = img1(param.crop{1}{:});
+        img2 = img2(param.crop{2}{:});
+    else 
+        img1 = img1(param.crop{:});
+        img2 = img2(param.crop{:});
+    end
 end
 
 if param.GUIguess
@@ -443,140 +448,151 @@ x2 = x1;
 y1 = [];%[1:238];
 y2 = y1;
 
+subim1 = imgalign1;
+subim2 = imgalign2;
 
+try
+    % imgalign2 = shiftpp2(imgalign2,10,-10); % To test range adjustment
+    [subim1, subim2, delta, deltafine, regionsout] = registersubimages_2(imgalign1,imgalign2, x1, y1, x2, y2, upsamp, displ,1);
 
-% imgalign2 = shiftpp2(imgalign2,10,-10); % To test range adjustment
-[subim1, subim2, delta, deltafine, regionsout] = registersubimages_2(imgalign1,imgalign2, x1, y1, x2, y2, upsamp, displ,1);
+    %%% Fine alignment (second round) %%%
 
-%%% Fine alignment (second round) %%%
-
-% Remove ramp for fine alignment
-utils.verbose(2,'Removing ramp for fine alignment')
-%%% A patch for deltafine large
-if max(regionsout.y2+round(delta(1)))>size(img2,1)
-    warning('First subpixel registration refinement found large values')
-    regionsout.y2 = [min(regionsout.y2):size(img2,1)-round(delta(1))];
-    regionsout.y1 = regionsout.y2;
-end
-if max(regionsout.x2+round(delta(2)))>size(img2,2)
-    warning('First subpixel registration refinement found large values')
-    regionsout.x2 = [min(regionsout.x2):size(img2,2)-round(delta(2))];
-    regionsout.x1 = regionsout.x2;
-end
-%%%
-subimg1 = img1(regionsout.y1,regionsout.x1);
-subimg2 = img2(regionsout.y2+round(delta(1)),regionsout.x2+round(delta(2)));
-if ~flag_imread
-    subimg1 = remove_linearphase_v2(subimg1,ones(size(subimg1)),100);
-    subimg2 = remove_linearphase_v2(subimg2,ones(size(subimg2)),100);
-end
-
-
-% Remove ramp 
-if param.remove_ramp
-    utils.verbose(2,'Removing ramp for initial alignment')
-    subimg1 = utils.stabilize_phase(subimg1,'binning', 4);
-    subimg2 = utils.stabilize_phase(subimg2, subimg1, 'binning', 4);
-end
-
-if ~flag_imread
-    switch lower(param.image_prop)
-        case  'complex'
-            subimgalign1 = subimg1;
-            subimgalign2 = subimg2;
-            utils.verbose(2,'Registering complex valued images')
-        case 'phasor'
-            subimgalign1 = ones(size(subimg1)).*exp(1i*angle(subimg1));
-            subimgalign2 = ones(size(subimg1)).*exp(1i*angle(subimg2));
-            utils.verbose(2,'Registering phasor of complex valued images')
-        case 'phase'
-            subimgalign1 = angle(subimg1);
-            subimgalign2 = angle(subimg2);
-            utils.verbose(2,'Registering phase of complex valued images')
-        case 'variation'
-            [dX,dY] = math.get_phase_gradient_2D(subimg1); 
-            subimgalign1 = sqrt(dX.^2+dY.^2); 
-            [dX,dY] = math.get_phase_gradient_2D(subimg2); 
-            subimgalign2 = sqrt(dX.^2+dY.^2); 
+    % Remove ramp for fine alignment
+    utils.verbose(2,'Removing ramp for fine alignment')
+    %%% A patch for deltafine large
+    if max(regionsout.y2+round(delta(1)))>size(img2,1)
+        warning('First subpixel registration refinement found large values')
+        regionsout.y2 = [min(regionsout.y2):size(img2,1)-round(delta(1))];
+        regionsout.y1 = regionsout.y2;
     end
-else
-   subimgalign1 = subimg1;
-   subimgalign2 = subimg2; 
-end
+    if max(regionsout.x2+round(delta(2)))>size(img2,2)
+        warning('First subpixel registration refinement found large values')
+        regionsout.x2 = [min(regionsout.x2):size(img2,2)-round(delta(2))];
+        regionsout.x1 = regionsout.x2;
+    end
+    %%%
+    subimg1 = img1(regionsout.y1,regionsout.x1);
+    subimg2 = img2(regionsout.y2+round(delta(1)),regionsout.x2+round(delta(2)));
+    if ~flag_imread
+        subimg1 = remove_linearphase_v2(subimg1,ones(size(subimg1)),100);
+        subimg2 = remove_linearphase_v2(subimg2,ones(size(subimg2)),100);
+    end
 
-% Fine alignment %
-utils.verbose(2,'Fine alignment')
-[subim1, subim2, delta, deltafine, regionsout] = registersubimages_2(subimgalign1,subimgalign2, x1, y1, x2, y2, upsamp, displ,1);
 
-%%% propare images for FSC if variation was used for alignement 
-if strcmpi(param.image_prop, 'variation')
-    subim1 = subimg1(regionsout.y1, regionsout.x1); 
-    subim2 = subimg2(regionsout.y2, regionsout.x2); 
-    subim2 = shiftpp2(subim2,-deltafine(1), -deltafine(2)); %% Suboptimal, change to use a routine that receives FT data
-    % convert images to phasor 
-    subim1 = exp(1i*angle(subim1));
-    subim2 = exp(1i*angle(subim2));
-end
+    % Remove ramp 
+    if param.remove_ramp
+        utils.verbose(2,'Removing ramp for initial alignment')
+        subimg1 = utils.stabilize_phase(subimg1,'binning', 4);
+        subimg2 = utils.stabilize_phase(subimg2, subimg1, 'binning', 4);
+    end
 
-%%% Tapering %%%
-filterx = fract_hanning_pad(size(subim1,2),size(subim1,2),size(subim1,2)-2*taper);
-filterx = fftshift(filterx(1,:));
-filtery = fract_hanning_pad(size(subim1,1),size(subim1,1),size(subim1,1)-2*taper);
-filtery = fftshift(filtery(:,1));
-filterxy = filterx.*filtery;
-
-% Taper subimages %       
-subim1 = subim1.*filterxy;% + (1-filterxy).*mean(subim1(:));
-subim2 = subim2.*filterxy;% + (1-filterxy).*mean(subim2(:));
-
-if param.plotting > 1
-    plotting.smart_figure(23)
-    set(gcf,'Outerposition',[1 1 500 476])    %[left, bottom, width, height
-    if strcmpi(param.image_prop,'phase') || flag_imread
-        imagesc(subim1);
+    if ~flag_imread
+        switch lower(param.image_prop)
+            case  'complex'
+                subimgalign1 = subimg1;
+                subimgalign2 = subimg2;
+                utils.verbose(2,'Registering complex valued images')
+            case 'phasor'
+                subimgalign1 = ones(size(subimg1)).*exp(1i*angle(subimg1));
+                subimgalign2 = ones(size(subimg1)).*exp(1i*angle(subimg2));
+                utils.verbose(2,'Registering phasor of complex valued images')
+            case 'phase'
+                subimgalign1 = angle(subimg1);
+                subimgalign2 = angle(subimg2);
+                utils.verbose(2,'Registering phase of complex valued images')
+            case 'variation'
+                [dX,dY] = math.get_phase_gradient_2D(subimg1); 
+                subimgalign1 = sqrt(dX.^2+dY.^2); 
+                [dX,dY] = math.get_phase_gradient_2D(subimg2); 
+                subimgalign2 = sqrt(dX.^2+dY.^2); 
+        end
     else
-        imagesc(angle(subim1));
+       subimgalign1 = subimg1;
+       subimgalign2 = subimg2; 
     end
-    axis xy equal tight
-    colormap bone; colorbar
-    if param.prop_obj
-        [si_unit, val] = utils.get_unit_length(param.prop_obj);
-        title(sprintf([param.fname{1} '\npropagated by %d %s'], val, si_unit),'interpreter','none')
-    else
-        title(param.fname{1},'interpreter','none')
+
+    % Fine alignment %
+    utils.verbose(2,'Fine alignment')
+    [subim1, subim2, delta, deltafine, regionsout] = registersubimages_2(subimgalign1,subimgalign2, x1, y1, x2, y2, upsamp, displ,1);
+
+    %%% propare images for FSC if variation was used for alignement 
+    if strcmpi(param.image_prop, 'variation')
+        subim1 = subimg1(regionsout.y1, regionsout.x1); 
+        subim2 = subimg2(regionsout.y2, regionsout.x2); 
+        subim2 = shiftpp2(subim2,-deltafine(1), -deltafine(2)); %% Suboptimal, change to use a routine that receives FT data
+        % convert images to phasor 
+        subim1 = exp(1i*angle(subim1));
+        subim2 = exp(1i*angle(subim2));
     end
-    plotting.smart_figure(24)
-    if strcmpi(param.image_prop,'phase') || flag_imread
-        imagesc(real(subim2));
-    else
-        imagesc(angle(subim2));
+
+    %%% Tapering %%%
+    filterx = fract_hanning_pad(size(subim1,2),size(subim1,2),size(subim1,2)-2*taper);
+    filterx = fftshift(filterx(1,:));
+    filtery = fract_hanning_pad(size(subim1,1),size(subim1,1),size(subim1,1)-2*taper);
+    filtery = fftshift(filtery(:,1));
+    filterxy = filterx.*filtery;
+
+    % Taper subimages %       
+    subim1 = subim1.*filterxy;% + (1-filterxy).*mean(subim1(:));
+    subim2 = subim2.*filterxy;% + (1-filterxy).*mean(subim2(:));
+
+    if param.plotting > 1
+        plotting.smart_figure(23)
+        set(gcf,'Outerposition',[1 1 500 476])    %[left, bottom, width, height
+        if strcmpi(param.image_prop,'phase') || flag_imread
+            imagesc(subim1);
+        else
+            imagesc(angle(subim1));
+        end
+        axis xy equal tight
+        colormap bone; colorbar
+        if param.prop_obj
+            [si_unit, val] = utils.get_unit_length(param.prop_obj);
+            title(sprintf([param.fname{1} '\npropagated by %d %s'], val, si_unit),'interpreter','none')
+        else
+            title(param.fname{1},'interpreter','none')
+        end
+        plotting.smart_figure(24)
+        if strcmpi(param.image_prop,'phase') || flag_imread
+            imagesc(real(subim2));
+        else
+            imagesc(angle(subim2));
+        end
+        axis xy equal tight
+        colormap bone; colorbar
+        if param.prop_obj
+            [si_unit, val] = utils.get_unit_length(param.prop_obj);
+            title(sprintf([param.fname{2} '\npropagated by %d %s'], val, si_unit),'interpreter','none')
+        else
+            title(param.fname{2},'interpreter','none')
+        end
+        set(gcf,'Outerposition',[500 1 500 476])    %[left, bottom, width, height
     end
-    axis xy equal tight
-    colormap bone; colorbar
-    if param.prop_obj
-        [si_unit, val] = utils.get_unit_length(param.prop_obj);
-        title(sprintf([param.fname{2} '\npropagated by %d %s'], val, si_unit),'interpreter','none')
-    else
-        title(param.fname{2},'interpreter','none')
+    %% Computing the FSC
+    param.st_title = sprintf('%s\n %s\n flipped_images %d, taper %d',param.fname{1}, param.fname{2}, param.flipped_images, taper);
+    if flag_imread
+        subim1 = real(subim1);
+        subim2 = real(subim2);
+        warning('Assuming images are in real number!');
     end
-    set(gcf,'Outerposition',[500 1 500 476])    %[left, bottom, width, height
-end
-%% Computing the FSC
-param.st_title = sprintf('%s\n %s\n flipped_images %d, taper %d',param.fname{1}, param.fname{2}, param.flipped_images, taper);
-if flag_imread
-    subim1 = real(subim1);
-    subim2 = real(subim2);
-    warning('Assuming images are in real number!');
-end
+
+    subim1 = utils.stabilize_phase(subim1, subim2, 'binning', 4, 'fourier_guess', false); 
+
+catch
     
-subim1 = utils.stabilize_phase(subim1, subim2, 'binning', 4, 'fourier_guess', false); 
-
-if param.electron %special version for electron ptychography. unit: angstrom
-    [resolution,FSC,T,freq,n,stat] = fourier_shell_corr_3D_2e(subim1,subim2, param);
-else
-    [resolution,FSC,T,freq,n,stat] = fourier_shell_corr_3D_2(subim1,subim2, param);
+    disp('pre-processing failed...')
 end
-
+try
+    if param.electron %special version for electron ptychography. unit: angstrom
+        [resolution,FSC,T,freq,n,stat] = fourier_shell_corr_3D_2e(subim1,subim2, param);
+    else
+        [resolution,FSC,T,freq,n,stat] = fourier_shell_corr_3D_2(subim1,subim2, param);
+    end
+catch
+    resolution = inf;
+    stat = {};
+    stat.fsc_mean = 0;
+end
 %% visually compare alignment quality 
 if param.plotting>2
     plotting.smart_figure(4545)
