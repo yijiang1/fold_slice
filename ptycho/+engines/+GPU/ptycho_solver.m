@@ -405,7 +405,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
     end
     
     %% probe orthogonalization
-    if par.probe_modes > par.Nrec && (~is_method(par, 'DM') || iter == par.number_iterations)
+    if par.ortho_probe_modes && par.probe_modes > par.Nrec && (~is_method(par, 'DM') || iter == par.number_iterations)
         %  orthogonalization of incoherent probe modes 
         if is_used(par, 'fly_scan')
             probes = self.probe;
