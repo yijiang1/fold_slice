@@ -57,6 +57,7 @@ function [param] = get_defaults
     param.remove_object_ambiguity = true;    % remove intensity ambiguity between the object and the probes 
     param.variable_probe = false;           % Use SVD to account for variable illumination during a single (coupled) scan
     param.apply_subpix_shift = false;       % apply FFT-based subpixel shift, important for good position refinement but it is slow
+    param.ortho_probe_modes = true;       % orthogonalize incoherent probe modes after each iteration
 
     param.probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % list of free parameters in the geometry model
     param.probe_position_search = inf;
