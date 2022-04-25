@@ -3,27 +3,27 @@
 % The method is base on gradient magnitude of the image 
 % Written by YJ
 
-function weight_sino = estimate_reliability_region_grad(sinogram, fill, erode_mat)
-    %{
-    disp(size(sinogram))
-    [Gmag,~] = imgradient(gather(sinogram));
-    sinogram_temp = imfill(Gmag,fill);
-    level = graythresh(sinogram_temp);
-    weight_sino_temp = imbinarize(sinogram_temp,level);
-    weight_sino = imerode(weight_sino_temp,erode_mat);
-    %}
-    
+function weight_sino = estimate_reliability_region_grad(sinogram, fill, SE)
+
     weight_sino = single(zeros(size(sinogram)));
+    
     for i=1:size(sinogram,3)
         if ~isreal(sinogram)
-            [Gmag,~] = imgradient(angle(sinogram(:,:,i)));
+            sinogram_temp = angle(sinogram(:,:,i));
         else
-            [Gmag,~] = imgradient(sinogram(:,:,i));
+            sinogram_temp = sinogram(:,:,i);
         end
+        
+        H = fspecial('unsharp');
+        sinogram_temp = imfilter(sinogram_temp,H);
+        [Gmag,~] = imgradient(sinogram_temp);
         sinogram_temp = imfill(Gmag,fill);
         level = graythresh(gather(sinogram_temp));
+        
         weight_sino_temp = imbinarize(gather(sinogram_temp),level);
-        weight_sino(:,:,i) = imerode(weight_sino_temp,erode_mat);
+        weight_sino_temp = imclose(weight_sino_temp,SE);
+        weight_sino_temp = imerode(weight_sino_temp,SE);
+        weight_sino(:,:,i) = weight_sino_temp;
+        
     end
-    
 end
