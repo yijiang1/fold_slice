@@ -1,4 +1,4 @@
-% INITIALIZE_TOMO_APS basic initialization steps of tomography -> check validity of the inputs, 
+% INITIALIZE_TOMO_MATLAB basic initialization steps of tomography -> check validity of the inputs, 
 % load first projection and store its parameters, check angles, create output folders 
 % Created by YJ Based on PSI's function
 
@@ -16,7 +16,7 @@
 %   ++object        example of one loaded projection 
 
 
-function [par, angles_check, object] = initialize_tomo_aps(par, scans, use_gpu, object_preprocess_fun)
+function [par, angles_check, object] = initialize_tomo_matlab(par, scans, use_gpu, object_preprocess_fun)
 
     import ptycho.*
     import io.*
@@ -36,7 +36,6 @@ function [par, angles_check, object] = initialize_tomo_aps(par, scans, use_gpu, 
        pause(5)
        use_gpu = false;
     end
-    
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%   CHECK GPU AVAILIBILITY %%%%
@@ -90,9 +89,7 @@ function [par, angles_check, object] = initialize_tomo_aps(par, scans, use_gpu, 
             % less, but then it gets less efficient.           
         elseif (gpu.AvailableMemory < gpu.TotalMemory * 0.9 || gpu.AvailableMemory < 3e9)
             %utils.report_GPU_usage
-            
         end
-        
     end
     if nargin < 4
         object_preprocess_fun = []; % no preprocessing function 
@@ -109,7 +106,7 @@ function [par, angles_check, object] = initialize_tomo_aps(par, scans, use_gpu, 
     	file = find_ML_recon_files_names(par, scans(ii)); %find ML recon outputs
         if ~isempty(file)
             hasRecon(ii) = 1;
-        end        
+        end
     end
     %}
     
@@ -132,7 +129,7 @@ function [par, angles_check, object] = initialize_tomo_aps(par, scans, use_gpu, 
     if isempty(file)
         error('No reconstructions found, check that analysis folder path contains scans %i-%i', min(scans), max(scans))
     end
-    disp(file)
+    %disp(file)
     %%%  Read first projection to check size and reconstruction parameters
     display(['Reading file: ' file])
     [object, probe, dx_spec] = load_aps_ML_recons(file);
@@ -248,29 +245,7 @@ function [par, angles_check, object] = initialize_tomo_aps(par, scans, use_gpu, 
         par.output_folder{end+1}= 'online';
     end
     
-        
     par.output_folder = join(par.output_folder, '_');
     par.output_folder = par.output_folder{1}; 
     
-
-    %{
-    if  ~debug()
-        utils.verbose('Output folder: %s', par.output_folder)
-        if ~exist(par.output_folder,'dir') 
-            mkdir(par.output_folder); 
-        end
-        [~,attr] = fileattrib(par.output_folder); 
-        if ~(attr.UserWrite || attr.GroupWrite)
-            error('Output path %s is not writable', par.output_folder)
-        end
-        % For website
-        subdir_online = fullfile(par.base_path,'analysis/online/tomo/');
-        if ~exist(subdir_online,'dir')
-            mkdir(subdir_online);
-        end
-        par.online_tomo_path = sprintf('%sonline_tomo_S%05d', subdir_online, min(par.scanstomo));
-
-    end
-    %}
-
 end

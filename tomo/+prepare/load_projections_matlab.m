@@ -1,6 +1,6 @@
-%   LOAD_PROJECTIONS_APS load reconstructed projections from disk to RAM 
+%   LOAD_PROJECTIONS_MATLAB load reconstructed projections from disk to RAM 
 %  created by YJ based on PSI's function
-%  [stack_object, theta,num_proj, par]  =  load_projections(par, exclude_scans, dims_ob, theta, custom_preprocess_fun)
+%  [stack_object, theta,num_proj, par]  =  load_projections_matlab(par, exclude_scans, dims_ob, theta, custom_preprocess_fun)
 %
 %   Inputs: 
 %       **par - parameter structure 
@@ -15,7 +15,7 @@
 %       ++num_proj - number of projections 
 %       ++par - updated parameter structure 
 
-function [stack_object, theta,num_proj, par]  = load_projections_aps(par, exclude_scans, dims_ob, theta, custom_preprocess_fun)
+function [stack_object, theta,num_proj, par]  = load_projections_matlab(par, exclude_scans, dims_ob, theta, custom_preprocess_fun)
 
 import ptycho.* 
 import utils.* 
