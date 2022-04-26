@@ -1,29 +1,42 @@
-% weight_sino = estimate_reliability_region_grad(complex_projection, probe_size, subsample)
-% Estimates the good region in the (real) sinogram for alignment and reconstruction.
-% The method is base on gradient magnitude of the image 
+% weights = estimate_reliability_region_grad(input, r_close, r_erode, par)
+% Estimates good regions in real/complex projection stack base on gradient
+% magnitude, with tricks such as morphological transformations.
+% Inputs: 
+%   **input       - real or complex image stack 
+%   **r_close     - disk radius of structuring element for close transform
+%   **r_erode     - disk radius of structuring element for erode transform
+%   **par         - parameters to control other image processing steps
+% *returns* 
+%   ++output      - weights for each projection
 % Written by YJ
 
-function weight_sino = estimate_reliability_region_grad(sinogram, fill, erode_mat)
-    %{
-    disp(size(sinogram))
-    [Gmag,~] = imgradient(gather(sinogram));
-    sinogram_temp = imfill(Gmag,fill);
-    level = graythresh(sinogram_temp);
-    weight_sino_temp = imbinarize(sinogram_temp,level);
-    weight_sino = imerode(weight_sino_temp,erode_mat);
-    %}
+function weights = estimate_reliability_region_grad(input, r_close, r_erode, par)
+
+    weights = single(zeros(size(input)));
     
-    weight_sino = single(zeros(size(sinogram)));
-    for i=1:size(sinogram,3)
-        if ~isreal(sinogram)
-            [Gmag,~] = imgradient(angle(sinogram(:,:,i)));
+    for i=1:size(input,3)
+        if ~isreal(input)
+            sinogram_temp = angle(input(:,:,i));
         else
-            [Gmag,~] = imgradient(sinogram(:,:,i));
+            sinogram_temp = input(:,:,i);
         end
-        sinogram_temp = imfill(Gmag,fill);
+        
+        if par.unsharp
+            sinogram_temp = imfilter(sinogram_temp, fspecial('unsharp'));
+        end
+        [sinogram_temp,~] = imgradient(sinogram_temp);
+        if par.fill_connectivity>0
+            sinogram_temp = imfill(sinogram_temp, par.fill_connectivity);
+        end
+        
         level = graythresh(gather(sinogram_temp));
-        weight_sino_temp = imbinarize(gather(sinogram_temp),level);
-        weight_sino(:,:,i) = imerode(weight_sino_temp,erode_mat);
+        weight_temp = imbinarize(gather(sinogram_temp), level);
+        if r_close(i)>0
+            weight_temp = imclose(weight_temp,  strel('disk', r_close(i)));
+        end
+        if r_erode(i)>0
+            weight_temp = imerode(weight_temp, strel('disk', r_erode(i)));
+        end
+        weights(:,:,i) = weight_temp;
     end
-    
 end
