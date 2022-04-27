@@ -106,7 +106,7 @@ if isfield(par, 'fp16_precision') && par.fp16_precision
 else
     stack_object=zeros(dims_ob(1),dims_ob(2),num_proj, 'like', single(1i));
 end
-pixel_scale =zeros(num_proj,2);
+pixel_size =zeros(num_proj,2);
 
 tic
 
@@ -166,16 +166,21 @@ for num=1:num_proj
                 object = single(object.object);
 
                 parameter = load(file{1},'p');
-                pixel_scale(num,:) = parameter.p.dx_spec;  %pixel size
-                %disp(file{1})
+                pixel_size(num,:) = parameter.p.dx_spec;  %pixel size
                 break
             catch
-                warning(['Loading failed: ' [file{1}]])
+                %warning(['Loading failed: ' [file{1}]])
             end
         end
     end
     
-    %% for multislice recon - sum layers into a single projection
+    if isempty(object) || all(object(:) == 0 )
+        which_missing(num) = true;
+        warning(['Loading failed: ' [file{:}]])
+        continue
+    end
+    
+    % for multislice recon - sum layers into a single projection
     if size(object,3)>1
         if isfield(par.MLrecon,'select_layers') && any(par.MLrecon.select_layers)
             object = prod(object(:,:,par.MLrecon.select_layers),3);
@@ -186,12 +191,6 @@ for num=1:num_proj
     
     %%
     object_size_orig(:,num) = size(object);
-
-    if isempty(object) || all(object(:) == 0 )
-        which_missing(num) = true;
-        warning(['Loading failed: ' [file{:}]])
-        continue
-    end
     if isfield(par, 'crop_edge') && par.crop_edge>0
         object = object(1+par.crop_edge:end-par.crop_edge,1+par.crop_edge:end-par.crop_edge);
     end
@@ -283,7 +282,6 @@ if any(poor_projections)
     verbose(1, 'Found %i/%i projections with more than %i residues ', sum(poor_projections), Nprojections, max_residua)
 end
 
-
 if any(which_missing & ~ismember(scanstomo,  exclude_scans) )
     missing = find(which_missing & ~ismember(scanstomo,  exclude_scans)); 
     verbose(1,['Projections not found are ' num2str(missing)])
@@ -304,7 +302,6 @@ else
     verbose(1,'All loaded projections are OK')
 end
 
-
 %%% Getting rid of missing projections %%%
 which_remove = which_missing | which_wrong; 
 if any(which_remove)
@@ -314,8 +311,8 @@ if any(which_remove)
         stack_object(:,:,which_remove) = [];
         scanstomo(which_remove)=[];
         theta(which_remove)=[];
-        pixel_scale(which_remove,:) = []; 
-        energy(which_remove,:) = []; 
+        pixel_size(which_remove,:) = [];
+        energy(which_remove,:) = [];
 
         disp('Done')
     else
@@ -326,7 +323,7 @@ end
 par.scanstomo = scanstomo; 
 par.num_proj=numel(scanstomo);
 
-pixel_scale = pixel_scale ./ mean(pixel_scale); 
+pixel_scale = pixel_size ./ mean(pixel_size); 
 
 assert(par.num_proj > 0, 'No projections loaded')
 
@@ -345,7 +342,8 @@ else
     %pixel_scale = [1,1]; 
 end
 
-par.pixel_scale = pixel_scale; 
+par.pixel_scale = pixel_scale;
+par.pixel_size = pixel_size;
 par.energy = energy; 
 
 %% clip the projections ampltitude by quantile filter 
