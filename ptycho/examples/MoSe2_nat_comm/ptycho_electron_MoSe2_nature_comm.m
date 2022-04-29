@@ -3,7 +3,7 @@ addpath(strcat(pwd,'/utils/'))
 addpath(core.find_base_package)
 
 %%%%%%%%%%%%%%%%%%%% data parameters %%%%%%%%%%%%%%%%%%%%
-base_path = '/home/beams2/YJIANG/ptychography/electron/mos2/nat_comm/';
+base_path = '/home/beams2/YJIANG/ptychography/electron/mose2/nat_comm/';
 roi_label = '0_Ndp128';
 scan_number = 1;
 scan_string_format = '%01d';
@@ -27,7 +27,7 @@ Nprobe = 5; % # of probe modes
 variable_probe_modes = 0; % # of modes for variable probe correction
 grouping = 120; % group size. small -> better convergence but longer time/iteration
 N_pos_corr = 0; % iteration number to start position correction. inf means no position correction
-initial_probe_file = '/home/beams2/YJIANG/ptychography/electron/mos2/nat_comm/1/init_probe.mat';
+initial_probe_file = '/home/beams2/YJIANG/ptychography/electron/mose2/nat_comm/1/init_probe.mat';
 
 %% %%%%%%%%%%%%%%%%%% initialize data parameters %%%%%%%%%%%%%%%%%%%%
 p = struct();
