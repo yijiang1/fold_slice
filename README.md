@@ -23,7 +23,9 @@ It's based on the GPU engine (written by Michal Odstrcil) with improvements such
 
 Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Hanke, S. Ganschow, D. G. Schlom, D. A. Muller, Electron ptychography achieves atomic-resolution limits set by lattice vibrations. Science 372 (6544), 826-831.
 
-3. A non-exhaustive list of new features in the GPU and GPU_MS engines: 
+3. We developed an automatic parameter tuning workflow for ptychography using Bayesian optimization with Gaussisn processes: https://arxiv.org/abs/2204.11815
+
+4. A non-exhaustive list of new features in the GPU and GPU_MS engines: 
 
 | Features  | GPU         |  GPU_MS | 
 | :---         |     :---:      |  :---: |
@@ -33,6 +35,7 @@ Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Ha
 | Multi-scan reconstruction | :heavy_check_mark: | :heavy_check_mark: |
 | TV regularization on object phase| :heavy_check_mark: | :heavy_check_mark: |
 | Grid artifact removal| :heavy_check_mark: | :heavy_multiplication_x: |
+| Automatic parameter selection| :heavy_check_mark: | :heavy_multiplication_x: |
 
 # Other ptychography software
 If you don't own Matlab or want to explore other ptychography software. Here are some public repositories:
