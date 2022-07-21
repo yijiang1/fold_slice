@@ -28,9 +28,11 @@ end
 if ~isfield(p.save, 'store_images')
     p.save.store_images = true;
 end
-if ~p.save.store_images
-    close all
-end
+
+%disabled by YJ
+%if ~p.save.store_images
+%    close all
+%end
 
 % prepare container for meta data
 assert( isnumeric(p.scan_number), 'p.scan_number has to contain an integer number')
