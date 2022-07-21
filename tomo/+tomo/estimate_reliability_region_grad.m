@@ -14,6 +14,9 @@ function weights = estimate_reliability_region_grad(input, r_close, r_erode, par
 
     weights = single(zeros(size(input)));
     
+    r_close = double(gather(r_close));
+    r_erode = double(gather(r_erode));
+    
     for i=1:size(input,3)
         if ~isreal(input)
             sinogram_temp = angle(input(:,:,i));
