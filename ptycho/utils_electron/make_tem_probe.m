@@ -67,9 +67,9 @@ for i= 1:p.N_z
     if p.C3~=0; chi(:,:,i) = chi(:,:,i) + pi/2*p.C3*lambda^3*kR.^4; end
     if p.C5~=0; chi(:,:,i) = chi(:,:,i) + pi/3*p.C5*lambda^5*kR.^6; end
     if p.C7~=0; chi(:,:,i) = chi(:,:,i) + pi/4*p.C7*lambda^7*kR.^8; end
-    if p.f_a2~=0; chi(:,:,i) = chi(:,:,i) + pi*p.f_a2*lambda*kR.^2*sin(2*(theta-p.theta_a2)); end
-    if p.f_a3~=0; chi(:,:,i) = chi(:,:,i) + 2*pi/3*p.f_a3*lambda^2*kR.^3*sin(3*(theta-p.theta_a3)); end
-    if p.f_c3~=0; chi(:,:,i) = chi(:,:,i) + 2*pi/3*p.f_c3*lambda^2*kR.^3*sin(theta-p.theta_c3); end
+    if p.f_a2~=0; chi(:,:,i) = chi(:,:,i) + pi*p.f_a2*lambda*kR.^2.*sin(2*(theta-p.theta_a2)); end
+    if p.f_a3~=0; chi(:,:,i) = chi(:,:,i) + 2*pi/3*p.f_a3*lambda^2*kR.^3.*sin(3*(theta-p.theta_a3)); end
+    if p.f_c3~=0; chi(:,:,i) = chi(:,:,i) + 2*pi/3*p.f_c3*lambda^2*kR.^3.*sin(theta-p.theta_c3); end
 
     phase = exp(-1i.*chi(:,:,i)).*exp(-2*pi*1i*p.shifts(1).*kX).*exp(-2*pi*1i*p.shifts(2).*kY);
     probe(:,:,i) = mask.*phase;
