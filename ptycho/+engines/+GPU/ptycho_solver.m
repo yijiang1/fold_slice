@@ -715,7 +715,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
                 saveName = strcat('probe_mag_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/probe_mag/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                imwrite(mat2gray(abs(probe_temp))*64,parula,strcat(saveDir,saveName),'tiff')
+                imwrite(mat2gray(abs(probe_temp))*256,parula,strcat(saveDir,saveName),'tiff')
             end
             if ismember('probe', par.save_images)
                 saveName = strcat('probe_Niter',num2str(iter),'.tiff');
