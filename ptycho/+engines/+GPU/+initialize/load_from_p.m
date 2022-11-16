@@ -289,10 +289,14 @@ function [self, param, p] = load_from_p(param, p)
         for layer = 1:size(self.object,2)
             % if needed expand the object to allow position refinement 
             % and shift for consistency with the CPU code
-            self.object{i,layer} = imshift_fast(self.object{i,layer},1,1,self.Np_o, 'nearest', mean(self.object{i,layer}(:)));
+            if isfield(p, 'init_obj_pad_value')
+                self.object{i,layer} = imshift_fast(self.object{i,layer},1,1,self.Np_o, 'nearest', p.init_obj_pad_value);
+            else
+                self.object{i,layer} = imshift_fast(self.object{i,layer},1,1,self.Np_o, 'nearest', min(self.object{i,layer}(:)));
+            end
         end
     end
-    
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% load data, mask noise %%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
