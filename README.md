@@ -23,7 +23,7 @@ It's based on the GPU engine (written by Michal Odstrcil) with improvements such
 
 Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Hanke, S. Ganschow, D. G. Schlom, D. A. Muller, Electron ptychography achieves atomic-resolution limits set by lattice vibrations. Science 372 (6544), 826-831.
 
-3. We developed an automatic parameter tuning workflow for ptychography using Bayesian optimization with Gaussian processes: https://arxiv.org/abs/2204.11815
+3. We developed an automatic parameter tuning workflow for ptychography using Bayesian optimization with Gaussian processes: https://doi.org/10.1038/s41598-022-16041-5
 
 4. A non-exhaustive list of new features in the GPU and GPU_MS engines: 
 
