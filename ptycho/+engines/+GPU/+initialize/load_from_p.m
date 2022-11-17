@@ -429,10 +429,19 @@ function [self, param, p] = load_from_p(param, p)
 
     % if requested, shift the average probe to center and shift the object
     % to correspond to the probe shift
-    if check_option(p, 'auto_center_probe')
-        verbose(1, 'Shift probe to center')
-        %[x,y] = center(mean(abs(self.probe{1}(:,:,:,1))));
+    if isfield(p, 'manual_center_probe') && any(p.manual_center_probe)
+        verbose(0, 'Manally shift probes & objects by (%0.1f, %0.1f) pixels', p.manual_center_probe )
+        x = p.manual_center_probe(2);
+        y = p.manual_center_probe(1);
+        for ii = 1:numel(self.probe)
+            self.probe{ii} = imshift_fft(self.probe{ii}, x,y);
+        end
+        for ii = 1:numel(self.object)
+            self.object{ii} = imshift_fft(self.object{ii}, x, y);
+        end
+    elseif check_option(p, 'auto_center_probe')
         [x,y] = center(abs(self.probe{1}(:,:,1,1)));
+        verbose(0, 'Shift probes by (%0.1f, %0.1f) pixels to center', -[y,x])
         for ii = 1:numel(self.probe)
             self.probe{ii} = imshift_fft(self.probe{ii}, -x,-y);
         end
