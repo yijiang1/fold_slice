@@ -6,11 +6,11 @@ The package is built upon the Matlab code developed by the Science IT and the co
 https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should follow the agreements (see below) and/or refer to their website.
 
 # Getting started
-1. Check the official documentation of the PtychoShelves package to see its software requirement. You need the following matlab toolbox in order to use all the features in the package: Parallel computing (for GPU engines and astra), Curve Fitting, Image processing, Optimization, Signal processing.
+1. Check the official documentation of the PtychoShelves package to see its software requirements. You need the following Matlab toolbox in order to use all the features in the package: Parallel computing (for GPU engines and astra), Curve Fitting, Image processing, Optimization, and Signal processing.
 
 2. Try the data preparation and reconstruction scripts in /fold_slice/ptycho/ to get familiar with the data format and reconstruction parameters.
 
-3. In addition to the offical documentation, you can also find some notes in /fold_slice/ptycho/notes/. Some of them might be outdated, but it can help you understand the overall code structure.
+3. In addition to the official documentation, you can also find some notes in /fold_slice/ptycho/notes/. Some might be outdated, but they can help you understand the overall code structure.
 
 4. We have a weekly study group to discuss everything related to image reconstruction problems (e.g., ptychography, tomography, and machine learning). You can find some past lectures here: https://anl.box.com/s/3ddqp3d0r6yv09a49qlaz0i1frrhnxgl
 
@@ -19,7 +19,7 @@ https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should fo
 
 2. A modified least-squares maximum likelihood multi-slice ptychography algorithm is added as a new engine: GPU_MS
 
-It's based on the GPU engine (written by Michal Odstrcil) with improvements such as multiple probe modes and bugs fixes. Usage of the code should include additional citation:
+It's based on the GPU engine (written by Michal Odstrcil) with improvements such as multiple probe modes and bug fixes. Usage of the code should include additional citations:
 
 Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Hanke, S. Ganschow, D. G. Schlom, D. A. Muller, Electron ptychography achieves atomic-resolution limits set by lattice vibrations. Science 372 (6544), 826-831.
 
@@ -45,6 +45,8 @@ Adorym: https://github.com/mdw771/adorym
 Ptycho_gui: https://github.com/NSLS-II/ptycho_gui
 
 Ptychopy: https://github.com/kyuepublic/ptychopy
+
+Py4DSTEM: https://github.com/py4dstem/py4DSTEM
 
 PyNX: http://ftp.esrf.fr/pub/scisoft/PyNX/doc/
 
