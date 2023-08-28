@@ -24,42 +24,6 @@
 %  (Linux, GCC 4.8.5)   mexcuda -outdir private  ASTRA_GPU_wrapper/ASTRA_GPU_wrapper.cu ASTRA_GPU_wrapper/util3d.cu ASTRA_GPU_wrapper/par3d_fp.cu ASTRA_GPU_wrapper/par3d_bp.cu
 %  (Windows)  mexcuda -outdir private  ASTRA_GPU_wrapper\ASTRA_GPU_wrapper.cu ASTRA_GPU_wrapper\util3d.cu ASTRA_GPU_wrapper\par3d_fp.cu ASTRA_GPU_wrapper\par3d_bp.cu
 
-    
-%*-----------------------------------------------------------------------*
-%|                                                                       |
-%|  Except where otherwise noted, this work is licensed under a          |
-%|  Creative Commons Attribution-NonCommercial-ShareAlike 4.0            |
-%|  International (CC BY-NC-SA 4.0) license.                             |
-%|                                                                       |
-%|  Copyright (c) 2017 by Paul Scherrer Institute (http://www.psi.ch)    |
-%|                                                                       |
-%|       Author: CXS group, PSI                                          |
-%*-----------------------------------------------------------------------*
-% You may use this code with the following provisions:
-%
-% If the code is fully or partially redistributed, or rewritten in another
-%   computing language this notice should be included in the redistribution.
-%
-% If this code, or subfunctions or parts of it, is used for research in a 
-%   publication or if it is fully or partially rewritten for another 
-%   computing language the authors and institution should be acknowledged 
-%   in written form in the publication: “Data processing was carried out 
-%   using the “cSAXS matlab package” developed by the CXS group,
-%   Paul Scherrer Institut, Switzerland.” 
-%   Variations on the latter text can be incorporated upon discussion with 
-%   the CXS group if needed to more specifically reflect the use of the package 
-%   for the published work.
-%
-% A publication that focuses on describing features, or parameters, that
-%    are already existing in the code should be first discussed with the
-%    authors.
-%   
-% This code and subroutines are part of a continuous development, they 
-%    are provided “as they are” without guarantees or liability on part
-%    of PSI or the authors. It is the user responsibility to ensure its 
-%    proper use and the correctness of the results.
-
-
 function vol_full = Atx_partial(projData, cfg, vectors,split,varargin)
 
 
@@ -117,7 +81,7 @@ function vol_full = Atx_partial(projData, cfg, vectors,split,varargin)
         
     % input parameters check
     if ismatrix(projData); projSize = [projSize,1]; end
-    assert(max(cfg.iProjU, cfg.iProjV) <= 4096, 'Sinogram exceed maximal size allowed by GPU (4096)')
+    assert(max(cfg.iProjU, cfg.iProjV) <= 8192, 'Sinogram exceed maximal size allowed by GPU (8192)')
     assert(all(projSize==[cfg.iProjV,cfg.iProjU,cfg.iProjAngles]), 'Wrong inputs size')
     assert(all(size(vectors)==[cfg.iProjAngles,12]), 'Wrong vectors size')
 

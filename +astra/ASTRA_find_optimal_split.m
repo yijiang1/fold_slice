@@ -11,43 +11,6 @@
 % Outputs:
 %     ++split - volume / angle split - [split_x,split_y,split_z,split_angles]   
 
-
-%*-----------------------------------------------------------------------*
-%|                                                                       |
-%|  Except where otherwise noted, this work is licensed under a          |
-%|  Creative Commons Attribution-NonCommercial-ShareAlike 4.0            |
-%|  International (CC BY-NC-SA 4.0) license.                             |
-%|                                                                       |
-%|  Copyright (c) 2017 by Paul Scherrer Institute (http://www.psi.ch)    |
-%|                                                                       |
-%|       Author: CXS group, PSI                                          |
-%*-----------------------------------------------------------------------*
-% You may use this code with the following provisions:
-%
-% If the code is fully or partially redistributed, or rewritten in another
-%   computing language this notice should be included in the redistribution.
-%
-% If this code, or subfunctions or parts of it, is used for research in a 
-%   publication or if it is fully or partially rewritten for another 
-%   computing language the authors and institution should be acknowledged 
-%   in written form in the publication: “Data processing was carried out 
-%   using the “cSAXS matlab package” developed by the CXS group,
-%   Paul Scherrer Institut, Switzerland.” 
-%   Variations on the latter text can be incorporated upon discussion with 
-%   the CXS group if needed to more specifically reflect the use of the package 
-%   for the published work.
-%
-% A publication that focuses on describing features, or parameters, that
-%    are already existing in the code should be first discussed with the
-%    authors.
-%   
-% This code and subroutines are part of a continuous development, they 
-%    are provided “as they are” without guarantees or liability on part
-%    of PSI or the authors. It is the user responsibility to ensure its 
-%    proper use and the correctness of the results.
-
-
-
 function split = ASTRA_find_optimal_split(cfg, num_gpu, angle_blocks, propagator)
   
     if gpuDeviceCount == 0
@@ -80,8 +43,8 @@ function split = ASTRA_find_optimal_split(cfg, num_gpu, angle_blocks, propagator
     split = max(split, [1,1,split(3)*ceil( ((cfg.iVolX*cfg.iVolY*cfg.iVolZ  )/ prod(split)/num_gpu) / double(intmax('int32')) )]); % maximal array on GPU limit 
 
     if ismember(lower(propagator), {'back','both'})
-        % if projection would be larger than 4096x4096 -> split the reconstruction volume 
-        split = max(split, [cfg.iProjU, cfg.iProjU,  cfg.iProjV]/4096 ); % texture memory limit 
+        % if projection would be larger than 8192x8192 -> split the reconstruction volume 
+        split = max(split, [cfg.iProjU, cfg.iProjU,  cfg.iProjV]/8192 ); % texture memory limit 
     end
 
     % projection size limitation  +   astra allows only < 1024 angles
