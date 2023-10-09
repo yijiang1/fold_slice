@@ -121,6 +121,10 @@ if ~isempty(param.delta_z)
     end
 end
 
+if isfield(param,'diff_pattern_blur') && param.diff_pattern_blur>0
+    paramInfo = strcat(paramInfo,'_dpBlur',num2str(param.diff_pattern_blur));
+end
+
 if any(param.custom_data_flip)
     paramInfo = strcat(paramInfo,'_dpFlip');
     if param.custom_data_flip(1)==1
