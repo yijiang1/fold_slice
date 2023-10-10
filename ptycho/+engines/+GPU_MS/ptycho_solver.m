@@ -690,7 +690,9 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
                 saveName = strcat('obj_phase_roi_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/obj_phase_roi_stack/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                par_tiff.name = strcat(saveDir,saveName);
+                par_tiff = {};
+                par_tiff.name = strcat(saveDir, saveName);
+                par_tiff.colormap = gray(256);
                 save_tiff_image_stack(O_phase_roi, par_tiff);
             end
         end
@@ -728,7 +730,9 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
                 saveName = strcat('obj_mag_roi_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/obj_mag_roi_stack/');
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                par_tiff.name = strcat(saveDir,saveName);
+                par_tiff = {};
+                par_tiff.name = strcat(saveDir, saveName);
+                par_tiff.colormap = gray(256);
                 save_tiff_image_stack(O_mag_roi, par_tiff);
             end
         end
@@ -753,6 +757,26 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
                 if ~exist(saveDir, 'dir'); mkdir(saveDir); end
                 imwrite(convert_to_rgb(probe_temp),strcat(saveDir,saveName),'tiff')
             end
+        end
+
+        %% save probe in each layer (assumes free-space propagation)
+        if any(ismember({'probe_prop_mag'}, par.save_images))
+            probe_temp = zeros(size(probe,1),size(probe,2),par.Nlayers);
+            probe_temp(:,:,1) = probe(:,:,1);
+            for jj=2:length(self.z_distance)-1
+                [~,H,~,~] = near_field_evolution(ones(self.Np_p), self.z_distance(jj-1), self.lambda,  self.pixel_size.*self.Np_p, true );
+                H = ifftshift(H);
+                probe_temp(:,:,jj) = ifft2(bsxfun(@times, H, fft2(probe_temp(:,:,jj-1))));
+            end
+
+            saveName = strcat('probe_prop_mag_Niter',num2str(iter),'.tiff');
+            saveDir = strcat(par.fout,'/probe_prop_mag/');
+            if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+            par_tiff = {};
+            par_tiff.name = strcat(saveDir, saveName);
+            par_tiff.norm_single_slice = true;
+            par_tiff.colormap = parula(256);
+            save_tiff_image_stack(abs(probe_temp), par_tiff) 
         end
     end    
 end

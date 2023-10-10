@@ -306,7 +306,7 @@ eng.apply_tilted_plane_correction = ''; % if any(p.sample_rotation_angles([1,2])
 % I/O
 eng.plot_results_every = Niter_plot_results;
 eng.save_results_every = Niter_save_results;
-eng.save_images ={'obj_ph_stack','obj_ph_sum','probe'};
+eng.save_images ={'obj_ph_stack','obj_ph_sum','probe','probe_mag','probe_prop_mag'};
 eng.extraPrintInfo = strcat('PSO');
 
 resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.scan.roi_label,'/');
