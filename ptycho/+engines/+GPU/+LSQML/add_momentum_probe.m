@@ -83,7 +83,6 @@ function [self, cache] = add_momentum_probe(self, cache, par, probe_upd, iter, f
 
    verbose(1, 'Adding momentum to probe')
 
-   %disp(size(self.probe))
        
    Nmodes = size(self.probe,1);
 
@@ -131,12 +130,10 @@ function [self, cache] = add_momentum_probe(self, cache, par, probe_upd, iter, f
                         
             if all(corr_level(:) > 0 ) && ferr_ok
 
-try
+
                 % estimate optimal friction from previous steps 
                 poly_fit = polyfit(repmat(0:momentum_memory,probe_modes,1),[zeros(1,probe_modes);log(corr_level)]',1); 
-catch
-    keyboard
-end
+
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 gain = par.momentum;                           % smaller -> lower relative speed (less momentum)
                 friction =  0.5*max(-poly_fit(1),0);   % smaller -> longer memory, more momentum 
