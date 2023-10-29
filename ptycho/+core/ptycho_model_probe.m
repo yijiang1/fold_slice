@@ -58,15 +58,15 @@ if p.model_probe
         end
         %twofold astigmatism in angstrom & azimuthal orientation in radian
         if isfield(p.model,'probe_f_a2') && isfield(p.model,'probe_theta_a2') && p.model.probe_f_a2~=0
-        	chi = chi + pi*p.model.probe_f_a2*lambda*kR.^2*sin(2*(theta-p.model.probe_theta_a2));
+        	chi = chi + pi*p.model.probe_f_a2*lambda*kR.^2.*sin(2*(theta-p.model.probe_theta_a2));
         end
         %threefold astigmatism in angstrom & azimuthal orientation in radian
         if isfield(p.model,'probe_f_a3') && isfield(p.model,'probe_theta_a3') && p.model.probe_f_a3~=0
-        	chi = chi + 2*pi/3*p.model.probe_f_a3*lambda^2*kR.^3*sin(3*(theta-p.model.probe_theta_a3));
+        	chi = chi + 2*pi/3*p.model.probe_f_a3*lambda^2*kR.^3.*sin(3*(theta-p.model.probe_theta_a3));
         end
         %coma in angstrom & azimuthal orientation in radian
         if isfield(p.model,'probe_f_c3') && isfield(p.model,'probe_theta_c3') && p.model.probe_f_c3~=0
-        	chi = chi + 2*pi/3*p.model.probe_f_c3*lambda^2*kR.^3*sin(theta-p.model.probe_theta_c3);
+        	chi = chi + 2*pi/3*p.model.probe_f_c3*lambda^2*kR.^3.*sin(theta-p.model.probe_theta_c3);
         end
         
         probe = mask.*exp(-1i.*chi);
@@ -217,8 +217,13 @@ else
         end
     end
     if ~isempty(p.probe_file_propagation) && any(p.probe_file_propagation ~= 0)
-        verbose(2,'Propagating probe from file by %f mm',p.probe_file_propagation*1e3);
-        probe= prop_free_nf(double(probe), lambda, p.probe_file_propagation, dx_spec);
+        if isfield(p,'beam_source') && strcmp(p.beam_source, 'electron')
+            verbose(2,'Propagating probe from file by %f nm',p.probe_file_propagation/10);
+            probe= prop_free_nf(double(probe), lambda, -p.probe_file_propagation, dx_spec); %flip the sign for consistency
+        else
+            verbose(2,'Propagating probe from file by %f mm',p.probe_file_propagation*1e3);
+            probe= prop_free_nf(double(probe), lambda, p.probe_file_propagation, dx_spec);
+        end
     end
 
 end
@@ -231,3 +236,4 @@ else
 end
 pout = p;
 pout.probe_initial = probe;
+
