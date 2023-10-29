@@ -31,8 +31,8 @@ colormap parula
 axis image
 
 %% Generate diffraction patterns from reconstructed object and probes
-% Note: this is a very crude apporximiateion, because
-% 1. The layer distance could be too large for accurate forward propagations
+% Note: this is a very crude approximation because
+% 1. The layer distance could be too large for accurate forward propagations.
 % 2. Only the 1st probe mode is used.
 % 3. Sub-pixel shifts are NOT considered.
 
