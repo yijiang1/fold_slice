@@ -35,7 +35,8 @@ Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Ha
 | Multi-scan reconstruction | :heavy_check_mark: | :heavy_check_mark: |
 | TV regularization on object phase| :heavy_check_mark: | :heavy_check_mark: |
 | Grid artifact removal| :heavy_check_mark: | :heavy_multiplication_x: |
-| Automatic parameter selection| :heavy_check_mark: | :heavy_multiplication_x: |
+| Automatic parameter selection| :heavy_check_mark: | :heavy_check_mark: |
+| Account for detector blur with a Gaussian kernel| :heavy_check_mark: | :heavy_check_mark: |
 
 # Other ptychography software
 If you don't own Matlab or want to explore other ptychography software. Here are some public repositories:
@@ -43,6 +44,10 @@ If you don't own Matlab or want to explore other ptychography software. Here are
 Adorym: https://github.com/mdw771/adorym
 
 Ptycho_gui: https://github.com/NSLS-II/ptycho_gui
+
+Ptychodus: https://github.com/AdvancedPhotonSource/ptychodus
+
+PtychoNN: https://github.com/mcherukara/PtychoNN
 
 Ptychopy: https://github.com/kyuepublic/ptychopy
 
