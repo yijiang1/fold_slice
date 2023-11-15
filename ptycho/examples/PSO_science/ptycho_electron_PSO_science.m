@@ -4,10 +4,10 @@ addpath(core.find_base_package)
 
 %%%%%%%%%%%%%%%%%%%% data parameters %%%%%%%%%%%%%%%%%%%%
 base_path = '/home/beams2/YJIANG/ptychography/electron/PrScO3/science/';
-roi_label = '0_Ndp256';
+roi_label = '0_Ndp128';
 scan_number = 1;
 scan_string_format = '%01d';
-Ndpx = 256;  % size of cbed
+Ndpx = 128;  % size of cbed
 alpha0 = 21.4; % semi-convergence angle (mrad)
 rbf = 26; % radius of the BF disk in cbed. Can be used to calculate dk
 voltage = 300;
@@ -17,16 +17,14 @@ scan_step_size = 0.41; %angstrom
 N_scan_y = 64; %number of scan points
 N_scan_x = 64;
 %%%%%%%%%%%%%%%%%%%% reconstruction parameters %%%%%%%%%%%%%%%%%%%%
-gpu_id = 1;
+gpu_id = 4;
 Niter_save_results = 50;
-Niter_plot_results = inf;
+Niter_plot_results = 50;
 
 Nprobe = 8; % # of probe modes
 thickness = 210; % sample thickness in angstrom
 Nlayers = 21; % # of slices for multi-slice, 1 for single-slice
 delta_z = thickness / Nlayers;
-
-initial_probe_file = fullfile(base_path,'/1/init_probe.mat');
 
 %% %%%%%%%%%%%%%%%%%% initialize data parameters %%%%%%%%%%%%%%%%%%%%
 p = struct();
@@ -136,21 +134,21 @@ p.   model.object_type = 'rand';                            % specify how the ob
 p.   initial_iterate_object_file{1} = '';                   %  use this mat-file as initial guess of object, it is possible to use wild characters and pattern filling, example: '../analysis/S%05i/wrap_*_1024x1024_1_recons*'
 
 % Initial iterate probe
-p.   model_probe = false;                                   % Use model probe, if false load it from file 
-p.   model.probe_alpha_max = 21.4;                          % Model STEM probe's aperture size
-p.   model.probe_df = -200;                                 % Model STEM probe's defocus
-p.   model.probe_c3 = 0;                                    % Model STEM probe's third-order spherical aberration in angstrom (optional)
-p.   model.probe_c5 = 0;                                    % Model STEM probe's fifth-order spherical aberration in angstrom (optional)
-p.   model.probe_c7 = 0;                                    % Model STEM probe's seventh-order spherical aberration in angstrom (optional)
-p.   model.probe_f_a2 = 0;                                  % Model STEM probe's twofold astigmatism in angstrom (optional)
-p.   model.probe_theta_a2 = 0;                              % Model STEM probe's twofold azimuthal orientation in radian (optional)
-p.   model.probe_f_a3 = 0;                                  % Model STEM probe's threefold astigmatism in angstrom (optional)
-p.   model.probe_theta_a3 = 0;                              % Model STEM probe's threefold azimuthal orientation in radian (optional)
-p.   model.probe_f_c3 = 0;                                  % Model STEM probe's coma in angstrom (optional)
-p.   model.probe_theta_c3 = 0;                              % Model STEM probe's coma azimuthal orientation in radian (optional)
+p.   model_probe = true;                                   % Use model probe, if false load it from file 
+p.   model.probe_alpha_max = 21.4;                          % Modal STEM probe's aperture size
+p.   model.probe_df = -200;                                 % Modal STEM probe's defocus
+p.   model.probe_c3 = 0;                                    % Modal STEM probe's third-order spherical aberration in angstrom (optional)
+p.   model.probe_c5 = 0;                                    % Modal STEM probe's fifth-order spherical aberration in angstrom (optional)
+p.   model.probe_c7 = 0;                                    % Modal STEM probe's seventh-order spherical aberration in angstrom (optional)
+p.   model.probe_f_a2 = 0;                                  % Modal STEM probe's twofold astigmatism in angstrom
+p.   model.probe_theta_a2 = 0;                              % Modal STEM probe's twofold azimuthal orientation in radian
+p.   model.probe_f_a3 = 0;                                  % Modal STEM probe's threefold astigmatism in angstrom
+p.   model.probe_theta_a3 = 0;                              % Modal STEM probe's threefold azimuthal orientation in radian
+p.   model.probe_f_c3 = 0;                                  % Modal STEM probe's coma in angstrom
+p.   model.probe_theta_c3 = 0;                              % Modal STEM probe's coma azimuthal orientation in radian
 
 %Use probe from this mat-file (not used if model_probe is true)
-p.   initial_probe_file = initial_probe_file;
+p.   initial_probe_file = '';
 p.   probe_file_propagation = 0.0e-3;                            % Distance for propagating the probe from file in meters, = 0 to ignore
 p.   normalize_init_probe = true;                           % Added by YJ. Can be used to disable normalization of initial probes
 
@@ -214,7 +212,7 @@ eng. check_gpu_load = true;            % check available GPU memory before start
 
 % general
 eng. number_iterations = 200;          % number of iterations for selected method 
-eng. asize_presolve = [128, 128];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
+eng. asize_presolve = [];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. align_shared_objects = false;     % before merging multiple unshared objects into one shared, the object will be aligned and the probes shifted by the same distance -> use for alignement and shared reconstruction of drifting scans  
 
 eng. method = 'MLs';                   % choose GPU solver: DM, ePIE, hPIE, MLc, Mls, -- recommended are MLc and MLs
@@ -225,7 +223,7 @@ eng. grouping = 64;                    % size of processed blocks, larger blocks
                                        % * for DM is has no effect on convergence
 eng. probe_modes  = p.probe_modes;                % Number of coherent modes for probe
 eng. object_change_start = 1;          % Start updating object at this iteration number
-eng. probe_change_start = 20;           % Start updating probe at this iteration number
+eng. probe_change_start = 1;           % Start updating probe at this iteration number
 
 % regularizations
 eng. reg_mu = 0;                       % Regularization (smooting) constant ( reg_mu = 0 for no regularization)
@@ -254,7 +252,7 @@ eng. probe_regularization = 0.1;      % Weight factor for the probe update (iner
 % ADVANCED OPTIONS                     See for more details: Odstrčil M, et al., Optics express. 2018 Feb 5;26(3):3108-23.
 % position refinement 
 eng. apply_subpix_shift = true;       % apply FFT-based subpixel shift, it is automatically allowed for position refinement
-eng. probe_position_search = 50;      % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
+eng. probe_position_search = 0;      % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
 %eng. probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
 eng. probe_geometry_model = {};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
 eng. probe_position_error_max = inf; % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
@@ -310,14 +308,14 @@ eng.save_images ={'obj_ph_stack','obj_ph_sum','probe','probe_mag','probe_prop_ma
 eng.extraPrintInfo = strcat('PSO');
 
 resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.scan.roi_label,'/');
-[eng.fout, p.suffix] = generateResultDir(eng, resultDir);
+[eng.fout, p.suffix] = generateResultDir(eng, resultDir, '');
 
 %add engine
 [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
 %% refined reconstruction at full resolution
 eng. number_iterations = 200;          % number of iterations for selected method 
-eng. asize_presolve = [];              % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
+eng. asize_presolve = [256, 256];              % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. grouping = 32;                    % size of processed blocks, larger blocks need more memory but they use GPU more effeciently, !!! grouping == inf means use as large as possible to fit into memory 
                                        % * for hPIE, ePIE, MLs methods smaller blocks lead to faster convergence, 
                                        % * for MLc the convergence is similar 
@@ -329,6 +327,7 @@ eng. probe_position_search = 50;       % iteration number from which the engine 
 
 %add engine
 [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
+
 %% Run the reconstruction
 tic
 out = core.ptycho_recons(p);
