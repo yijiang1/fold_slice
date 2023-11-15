@@ -17,7 +17,7 @@ scan_step_size = 0.41; %angstrom
 N_scan_y = 64; %number of scan points
 N_scan_x = 64;
 %%%%%%%%%%%%%%%%%%%% reconstruction parameters %%%%%%%%%%%%%%%%%%%%
-gpu_id = 4;
+gpu_id = 1;
 Niter_save_results = 50;
 Niter_plot_results = 50;
 
@@ -135,17 +135,17 @@ p.   initial_iterate_object_file{1} = '';                   %  use this mat-file
 
 % Initial iterate probe
 p.   model_probe = true;                                   % Use model probe, if false load it from file 
-p.   model.probe_alpha_max = 21.4;                          % Modal STEM probe's aperture size
-p.   model.probe_df = -200;                                 % Modal STEM probe's defocus
-p.   model.probe_c3 = 0;                                    % Modal STEM probe's third-order spherical aberration in angstrom (optional)
-p.   model.probe_c5 = 0;                                    % Modal STEM probe's fifth-order spherical aberration in angstrom (optional)
-p.   model.probe_c7 = 0;                                    % Modal STEM probe's seventh-order spherical aberration in angstrom (optional)
-p.   model.probe_f_a2 = 0;                                  % Modal STEM probe's twofold astigmatism in angstrom
-p.   model.probe_theta_a2 = 0;                              % Modal STEM probe's twofold azimuthal orientation in radian
-p.   model.probe_f_a3 = 0;                                  % Modal STEM probe's threefold astigmatism in angstrom
-p.   model.probe_theta_a3 = 0;                              % Modal STEM probe's threefold azimuthal orientation in radian
-p.   model.probe_f_c3 = 0;                                  % Modal STEM probe's coma in angstrom
-p.   model.probe_theta_c3 = 0;                              % Modal STEM probe's coma azimuthal orientation in radian
+p.   model.probe_alpha_max = 21.4;                          % Model STEM probe's aperture size
+p.   model.probe_df = -200;                                 % Model STEM probe's defocus
+p.   model.probe_c3 = 0;                                    % Model STEM probe's third-order spherical aberration in angstrom
+p.   model.probe_c5 = 0;                                    % Model STEM probe's fifth-order spherical aberration in angstrom
+p.   model.probe_c7 = 0;                                    % Model STEM probe's seventh-order spherical aberration in angstrom
+p.   model.probe_f_a2 = 0;                                  % Model STEM probe's twofold astigmatism in angstrom
+p.   model.probe_theta_a2 = 0;                              % Model STEM probe's twofold azimuthal orientation in radian
+p.   model.probe_f_a3 = 0;                                  % Model STEM probe's threefold astigmatism in angstrom
+p.   model.probe_theta_a3 = 0;                              % Model STEM probe's threefold azimuthal orientation in radian
+p.   model.probe_f_c3 = 0;                                  % Model STEM probe's coma in angstrom
+p.   model.probe_theta_c3 = 0;                              % Model STEM probe's coma azimuthal orientation in radian
 
 %Use probe from this mat-file (not used if model_probe is true)
 p.   initial_probe_file = '';
@@ -223,7 +223,7 @@ eng. grouping = 64;                    % size of processed blocks, larger blocks
                                        % * for DM is has no effect on convergence
 eng. probe_modes  = p.probe_modes;                % Number of coherent modes for probe
 eng. object_change_start = 1;          % Start updating object at this iteration number
-eng. probe_change_start = 1;           % Start updating probe at this iteration number
+eng. probe_change_start = 20;           % Start updating probe at this iteration number
 
 % regularizations
 eng. reg_mu = 0;                       % Regularization (smooting) constant ( reg_mu = 0 for no regularization)
@@ -252,7 +252,7 @@ eng. probe_regularization = 0.1;      % Weight factor for the probe update (iner
 % ADVANCED OPTIONS                     See for more details: Odstrčil M, et al., Optics express. 2018 Feb 5;26(3):3108-23.
 % position refinement 
 eng. apply_subpix_shift = true;       % apply FFT-based subpixel shift, it is automatically allowed for position refinement
-eng. probe_position_search = 0;      % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
+eng. probe_position_search = 50;      % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
 %eng. probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
 eng. probe_geometry_model = {};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
 eng. probe_position_error_max = inf; % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
@@ -308,7 +308,7 @@ eng.save_images ={'obj_ph_stack','obj_ph_sum','probe','probe_mag','probe_prop_ma
 eng.extraPrintInfo = strcat('PSO');
 
 resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.scan.roi_label,'/');
-[eng.fout, p.suffix] = generateResultDir(eng, resultDir, '');
+[eng.fout, p.suffix] = generateResultDir(eng, resultDir);
 
 %add engine
 [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
