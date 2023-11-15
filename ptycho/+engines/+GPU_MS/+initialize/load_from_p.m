@@ -108,7 +108,7 @@ function [self, param, p] = load_from_p(param, p)
     if ~check_option(p,'asize_presolve') 
         param.Np_p_presolve = []; 
     else
-        param.Np_p_presolve = min(p.asize_presolve, p.asize); 
+        param.Np_p_presolve = p.asize_presolve; 
     end
   
     % Other parameters 

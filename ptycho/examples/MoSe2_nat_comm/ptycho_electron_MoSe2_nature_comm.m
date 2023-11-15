@@ -215,7 +215,7 @@ eng. check_gpu_load = true;            % check available GPU memory before start
 
 % general
 eng. number_iterations = Niter;          % number of iterations for selected method 
-eng. asize_presolve = [];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
+eng. asize_presolve = [];      % crop or pad diffraction patterns to "asize_presolve" size 
 eng. align_shared_objects = false;     % before merging multiple unshared objects into one shared, the object will be aligned and the probes shifted by the same distance -> use for alignement and shared reconstruction of drifting scans  
 
 eng. method = 'MLs';                   % choose GPU solver: DM, ePIE, hPIE, MLc, Mls, -- recommended are MLc and MLs
