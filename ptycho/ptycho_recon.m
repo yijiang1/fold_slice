@@ -566,7 +566,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     resultDir = fullfile(resultDir,'/',param_input.output_dir_prefix);
     
     eng.extraPrintInfo = strcat('Scan',num2str(p.scan_number(1)));
-    [eng.fout, p.suffix] = generateResultDir(eng, resultDir, output_dir_suffix);
+    [eng.fout, p.suffix] = generateResultDir(eng, resultDir, param_input.output_dir_suffix);
     [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
     %% Run the reconstruction
