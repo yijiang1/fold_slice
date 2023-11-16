@@ -90,6 +90,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     parse_param.addParameter('use_model_object', 1, @islogical)
     parse_param.addParameter('initial_object_file', '', @ischar)
     parse_param.addParameter('multiple_layers_obj', 0, @islogical)
+    parse_param.addParameter('sum_obj_layers', 0, @islogical)
 
     parse_param.addParameter('use_model_probe', 0, @islogical)
     parse_param.addParameter('initial_probe_file', '', @ischar)
@@ -330,7 +331,8 @@ function [out, eng, data_error] = ptycho_recon(param)
     % Initial iterate object
     p.   model_object = param_input.use_model_object;           % Use model object, if false load it from file 
     p.   model.object_type = 'rand';                            % specify how the object shall be created; use 'rand' for a random initial guess; use 'amplitude' for an initial guess based on the prepared data
-    p.   multiple_layers_obj = param_input.multiple_layers_obj;   % Added by YJ for multislice ptycho. If true, then keep all layers in the initial object file.
+    p.   multiple_layers_obj = param_input.multiple_layers_obj;   % Keep all object layers from a multislice reconstruction
+    p.   sum_obj_layers = param_input.sum_obj_layers;             % Sum all object layers from a multislice reconstruction
     p.   initial_iterate_object_file{1} = param_input.initial_object_file;  %  use this mat-file as initial guess of object, it is possible to use wild characters and pattern filling, example: '../analysis/S%05i/wrap_*_1024x1024_1_recons*'
 
     % Initial iterate probe
