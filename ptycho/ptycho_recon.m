@@ -426,9 +426,9 @@ function [out, eng, data_error] = ptycho_recon(param)
     eng. time_limit = param_input.time_limit;
     eng. number_iterations = param_input.Niter;          % number of iterations for selected method 
     if Ndp > double(param_input.Ndp_presolve)
-        eng. asize_presolve = [param_input.Ndp_presolve, param_input.Ndp_presolve];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
+        eng. asize_presolve = [param_input.Ndp_presolve, param_input.Ndp_presolve];      % crop or pad diffraction patterns to "asize_presolve" size
     else
-        eng. asize_presolve = [];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
+        eng. asize_presolve = []; 
     end
     eng. share_probe = p.share_probe;                 % Share probe between scans. Can be either a number/boolean or a list of numbers, specifying the probe index; e.g. [1 2 2] to share the probes between the second and third scan.
     eng. share_object = p.share_object;                % Share object between scans. Can be either a number/boolean or a list of numbers, specifying the object index; e.g. [1 2 2] to share the objects between the second and third scan. 
@@ -566,10 +566,6 @@ function [out, eng, data_error] = ptycho_recon(param)
     resultDir = fullfile(resultDir,'/',param_input.output_dir_prefix);
     
     eng.extraPrintInfo = strcat('Scan',num2str(p.scan_number(1)));
-    output_dir_suffix = param_input.output_dir_suffix;
-    if p.detector.upsampling>0
-        output_dir_suffix = sprintf([output_dir_suffix,'_dpUpsample%d'], 2^p.detector.upsampling);
-    end
     [eng.fout, p.suffix] = generateResultDir(eng, resultDir, output_dir_suffix);
     [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
