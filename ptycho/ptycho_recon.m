@@ -90,6 +90,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     parse_param.addParameter('use_model_object', 1, @islogical)
     parse_param.addParameter('initial_object_file', '', @ischar)
     parse_param.addParameter('multiple_layers_obj', 0, @islogical)
+    parse_param.addParameter('sum_obj_layers', 0, @islogical)
 
     parse_param.addParameter('use_model_probe', 0, @islogical)
     parse_param.addParameter('initial_probe_file', '', @ischar)
@@ -330,7 +331,8 @@ function [out, eng, data_error] = ptycho_recon(param)
     % Initial iterate object
     p.   model_object = param_input.use_model_object;           % Use model object, if false load it from file 
     p.   model.object_type = 'rand';                            % specify how the object shall be created; use 'rand' for a random initial guess; use 'amplitude' for an initial guess based on the prepared data
-    p.   multiple_layers_obj = param_input.multiple_layers_obj;   % Added by YJ for multislice ptycho. If true, then keep all layers in the initial object file.
+    p.   multiple_layers_obj = param_input.multiple_layers_obj;   % Keep all object layers from a multislice reconstruction
+    p.   sum_obj_layers = param_input.sum_obj_layers;             % Sum all object layers from a multislice reconstruction
     p.   initial_iterate_object_file{1} = param_input.initial_object_file;  %  use this mat-file as initial guess of object, it is possible to use wild characters and pattern filling, example: '../analysis/S%05i/wrap_*_1024x1024_1_recons*'
 
     % Initial iterate probe
@@ -424,9 +426,9 @@ function [out, eng, data_error] = ptycho_recon(param)
     eng. time_limit = param_input.time_limit;
     eng. number_iterations = param_input.Niter;          % number of iterations for selected method 
     if Ndp > double(param_input.Ndp_presolve)
-        eng. asize_presolve = [param_input.Ndp_presolve, param_input.Ndp_presolve];      % crop or pad diffraction patterns to "asize_presolve" size
+        eng. asize_presolve = [param_input.Ndp_presolve, param_input.Ndp_presolve];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
     else
-        eng. asize_presolve = []; 
+        eng. asize_presolve = [];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
     end
     eng. share_probe = p.share_probe;                 % Share probe between scans. Can be either a number/boolean or a list of numbers, specifying the probe index; e.g. [1 2 2] to share the probes between the second and third scan.
     eng. share_object = p.share_object;                % Share object between scans. Can be either a number/boolean or a list of numbers, specifying the object index; e.g. [1 2 2] to share the objects between the second and third scan. 
@@ -564,7 +566,11 @@ function [out, eng, data_error] = ptycho_recon(param)
     resultDir = fullfile(resultDir,'/',param_input.output_dir_prefix);
     
     eng.extraPrintInfo = strcat('Scan',num2str(p.scan_number(1)));
-    [eng.fout, p.suffix] = generateResultDir(eng, resultDir, param_input.output_dir_suffix);
+    output_dir_suffix = param_input.output_dir_suffix;
+    if p.detector.upsampling>0
+        output_dir_suffix = sprintf([output_dir_suffix,'_dpUpsample%d'], 2^p.detector.upsampling);
+    end
+    [eng.fout, p.suffix] = generateResultDir(eng, resultDir, output_dir_suffix);
     [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
     %% Run the reconstruction

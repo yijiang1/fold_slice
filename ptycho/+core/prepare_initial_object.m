@@ -99,8 +99,13 @@ else
         elseif mode_diff < 0
             % modified by YJ. keep all layers for multi-layer object
             if isfield(p,'multiple_layers_obj') && p.multiple_layers_obj
-                %add an extra axis that is needed by GPU_MS
-                object_temp(:,:,1,:) = p.object{ii}; 
+                if isfield(p,'sum_obj_layers') && p.sum_obj_layers
+                    verbose(2, 'Sum all layers in the initial object.')
+                    object_temp = prod(p.object{ii},3);
+                else
+                    %add an extra axis that is needed by GPU_MS
+                    object_temp(:,:,1,:) = p.object{ii}; 
+                end
                 p.object{ii} = object_temp;
             else
                 % remove object modes
