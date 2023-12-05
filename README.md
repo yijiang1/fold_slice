@@ -5,14 +5,15 @@ This is Yi Jiang's customized code for X-ray/electron ptychography and tomograph
 The package is built upon the Matlab code developed by the Science IT and the coherent X-ray scattering (CXS) groups at Paul Scherrer Institut, Switzerland:
 https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should follow the agreements (see below) and/or refer to their website.
 
-# Getting started
-1. Check the official documentation of the PtychoShelves package to see its software requirements. You need the following Matlab toolbox in order to use all the features in the package: Parallel computing (for GPU engines and astra), Curve Fitting, Image processing, Optimization, and Signal processing.
+# Get started
+1. Check the official [documentation](https://doi.org/10.1107/S1600576720001776) of the PtychoShelves package to see its requirements. You need the following Matlab toolbox to use all the features: Parallel computing, Curve Fitting, Image processing, Optimization, and Signal processing.
 
-2. Try the data preparation and reconstruction scripts in /fold_slice/ptycho/ to get familiar with the data format and reconstruction parameters.
+2. For ptychography, try the data preparation and reconstruction scripts in /fold_slice/ptycho/examples to get familiar with the data format and reconstruction parameters.
 
-3. In addition to the official documentation, you can also find some notes in /fold_slice/ptycho/notes/. Some might be outdated, but they can help you understand the overall code structure.
-
-4. We have a weekly study group to discuss everything related to image reconstruction problems (e.g., ptychography, tomography, and machine learning). You can find some past lectures here: https://anl.box.com/s/3ddqp3d0r6yv09a49qlaz0i1frrhnxgl
+# Resources
+1. The files in /fold_slice/ptycho/notes/ could help you understand the overall code structure. Warning: some notes might be outdated.
+2. [Dr. Chia-Hao Lee](https://sites.google.com/view/chiahao-lee/home?pli=1) wrote a great [blog](https://chiahao-blog.super.site/posts/theory-algorithm-and-code-structure-of-ptychoshelves) that details the algorithms and code structure of PtychoShelves.
+3. We have a weekly study group to discuss novel computational imaging techniques in electron microscopy. Some lectures can be found [here](https://anl.box.com/s/3ddqp3d0r6yv09a49qlaz0i1frrhnxgl).
 
 # Major differences from the PtychoShelves package
 1. Some data and reconstruction I/O conventions have been changed to accommodate for electron ptychography. See the example scripts for more details.
@@ -23,7 +24,7 @@ It's based on the GPU engine (written by Michal Odstrcil) with improvements such
 
 Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Hanke, S. Ganschow, D. G. Schlom, D. A. Muller, Electron ptychography achieves atomic-resolution limits set by lattice vibrations. Science 372 (6544), 826-831.
 
-3. We developed an automatic parameter tuning workflow for ptychography using Bayesian optimization with Gaussian processes: https://doi.org/10.1038/s41598-022-16041-5
+3. We developed an automatic parameter tuning workflow for ptychography using Bayesian optimization with Gaussian processes: https://doi.org/10.1038/s41598-022-16041-5. See the example scripts for more details.
 
 4. A non-exhaustive list of new features in the GPU and GPU_MS engines: 
 
