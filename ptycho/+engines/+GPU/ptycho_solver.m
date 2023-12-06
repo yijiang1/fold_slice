@@ -625,7 +625,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
         if par.save_init_probe
             p.init_probe = probe_init; %store initial probe (after init_solver.m's pre-processing)
         end
-        save(strcat(par.fout,'Niter',num2str(iter),'.mat'),'outputs','p','probe','object');
+        save(strcat(par.fout, 'Niter', num2str(iter), '.mat'), 'outputs', 'p', 'probe', 'object', "-v7.3");
         
         %% save object phase
         if any(ismember({'obj_ph','obj_ph_sum','obj_ph_stack'}, par.save_images))
