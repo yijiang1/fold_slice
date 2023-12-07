@@ -155,75 +155,119 @@ for num=1:num_proj
         continue  % skip the frames that are listed in exclude_scans
     end
     
-    if ~iscell(file)
-        file = {file};  % make them all cells 
+    load_from_ptycho_recon = true;
+    
+    % load from saved projections after initial processing
+    if isfield(par,'load_processed_projections') && par.load_processed_projections
+       proj_dir = fullfile(par.output_path, 'projections');
+       try
+           saved_file = fullfile(proj_dir, sprintf('scan_%05d.mat', scanstomo(num)));
+           load(saved_file)
+           pixel_size(num,:) = parameter.p.dx_spec;  %pixel size
+           object_size_orig(:,num) = original_object_size;
+           load_from_ptycho_recon = false;
+       catch
+           warning(['Loading saved projection failed: ' saved_file])
+       end
     end
-    object= [];
-    for jj = length(file):-1:1
-        for ii=1:3
-            try
-                object = load(file{1},'object');
-                object = single(object.object);
+    
+    % load from original ptycho recon files
+    if load_from_ptycho_recon
+        if ~iscell(file)
+            file = {file};  % make them all cells 
+        end
 
-                parameter = load(file{1},'p');
-                pixel_size(num,:) = parameter.p.dx_spec;  %pixel size
-                break
-            catch
-                %warning(['Loading failed: ' [file{1}]])
+        object= [];
+        for jj = length(file):-1:1
+            for ii=1:3
+                try
+                    object = load(file{1},'object');
+                    object = single(object.object);
+
+                    parameter = load(file{1},'p');
+                    pixel_size(num,:) = parameter.p.dx_spec;  %pixel size
+                    break
+                catch
+                    pause(5)
+                    warning(['Loading failed: ' [file{1}]])
+                end
+            end
+        end
+
+        if isempty(object) || all(object(:) == 0 )
+            which_missing(num) = true;
+            warning(['Loading failed: ' [file{:}]])
+            continue
+        end
+
+        % for multislice recon - sum selected layers into a single projection
+        if size(object,3)>1
+            if isfield(par.MLrecon,'select_layers') && any(par.MLrecon.select_layers)
+                object = prod(object(:,:,par.MLrecon.select_layers),3);
+            else
+                object = prod(object,3);
+            end
+        end
+
+        %%
+        object_size_orig(:,num) = size(object);
+        original_object_size = size(object);
+        if isfield(par, 'crop_edge') && par.crop_edge>0
+            object = object(1+par.crop_edge:end-par.crop_edge,1+par.crop_edge:end-par.crop_edge);
+        end
+
+        if ~isempty(custom_preprocess_fun) 
+            object = custom_preprocess_fun(object); 
+        end
+
+        nx = dims_ob(2);
+        ny = dims_ob(1);
+
+        if size(object,2) > nx       
+            object = object(:,1:nx);       
+        elseif size(object,2) < nx
+            object = padarray(object,[0 nx-size(object,2)],'post');
+        end
+
+        if size(object,1) > ny
+            if par.auto_alignment|| par.get_auto_calibration
+                object = object(1:ny,:);
+            else
+                shifty = floor((size(object,1)-ny)/2);
+                object = object([1:ny]+shifty,:);
+            end
+        elseif size(object,1) < ny
+            if par.auto_alignment||par.get_auto_calibration
+                object = padarray(object,[ny-size(object,1) 0],'post');
+            else
+                shifty = (ny-size(object,1))/2;
+                object = padarray(object,[ny-size(object,1)-floor(shifty) 0],'post');
+                object = padarray(object,[floor(shifty) 0],'pre');
+            end
+        end
+
+        % apply external shifts to projections
+        if isfield(par,'apply_shifts') && par.apply_shifts
+            %find shifts from inputs
+            scan_ind = find((par.scan_num_input + par.scan_num_offset) == scanstomo(num));
+            if ~isempty(scan_ind)
+                shifts = par.shifts_input(scan_ind,:);
+                object = utils.imshift_linear(object, shifts(1), shifts(2), 'linear');
             end
         end
     end
     
-    if isempty(object) || all(object(:) == 0 )
-        which_missing(num) = true;
-        warning(['Loading failed: ' [file{:}]])
-        continue
-    end
-    
-    % for multislice recon - sum layers into a single projection
-    if size(object,3)>1
-        if isfield(par.MLrecon,'select_layers') && any(par.MLrecon.select_layers)
-            object = prod(object(:,:,par.MLrecon.select_layers),3);
-        else
-            object = prod(object,3);
-        end
+    % save processed projections 
+    if isfield(par,'save_processed_projections') && par.save_processed_projections
+       save_dir = fullfile(par.output_path, 'projections');
+       if ~exist(save_dir, 'dir'); mkdir(fullfile(par.output_path, 'projections')); end
+       save_name = fullfile(save_dir, sprintf('scan_%05d.mat', scanstomo(num)));
+       if par.save_processed_projections_overwrite || ~exist(save_name, 'file')
+           save(save_name, 'object', 'original_object_size', 'parameter', "-v7.3")
+       end
     end
     
     %%
-    object_size_orig(:,num) = size(object);
-    if isfield(par, 'crop_edge') && par.crop_edge>0
-        object = object(1+par.crop_edge:end-par.crop_edge,1+par.crop_edge:end-par.crop_edge);
-    end
-    if ~isempty(custom_preprocess_fun) 
-        object = custom_preprocess_fun(object); 
-    end
-    
-    nx = dims_ob(2);
-    ny = dims_ob(1);
-
-    if size(object,2) > nx       
-        object = object(:,1:nx);       
-    elseif size(object,2) < nx
-        object = padarray(object,[0 nx-size(object,2)],'post');
-    end
-
-    if size(object,1) > ny
-        if par.auto_alignment|| par.get_auto_calibration
-            object = object(1:ny,:);
-        else
-            shifty = floor((size(object,1)-ny)/2);
-            object = object([1:ny]+shifty,:);
-        end
-    elseif size(object,1) < ny
-        if par.auto_alignment||par.get_auto_calibration
-            object = padarray(object,[ny-size(object,1) 0],'post');
-        else
-            shifty = (ny-size(object,1))/2;
-            object = padarray(object,[ny-size(object,1)-floor(shifty) 0],'post');
-            object = padarray(object,[floor(shifty) 0],'pre');
-        end
-    end
-    
     stack_object(:,:,num) = object;
 
     % if par.showrecons
@@ -395,6 +439,5 @@ if par.verbose_level && plot_angles
     title('Measured angles')
     drawnow 
 end
-
 
 end
