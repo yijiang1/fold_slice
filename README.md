@@ -13,7 +13,7 @@ https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should fo
 # Resources
 1. The files in /fold_slice/ptycho/notes/ could help you understand the overall code structure. Warning: some notes might be outdated.
 2. [Dr. Chia-Hao Lee](https://sites.google.com/view/chiahao-lee/home?pli=1) wrote a great [blog](https://chiahao-blog.super.site/posts/theory-algorithm-and-code-structure-of-ptychoshelves) that details the algorithms and code structure of PtychoShelves.
-3. We have a weekly study group to discuss novel computational imaging techniques in electron microscopy. Some lectures can be found [here](https://anl.box.com/s/3ddqp3d0r6yv09a49qlaz0i1frrhnxgl).
+3. We have a weekly study group to discuss novel computational imaging techniques in electron microscopy. Some tutorial lectures can be found [here](https://anl.box.com/s/f7lk410lf62rnia70fztd5l7n567btyv).
 
 # Major differences from the PtychoShelves package
 1. Some data and reconstruction I/O conventions have been changed to accommodate for electron ptychography. See the example scripts for more details.
