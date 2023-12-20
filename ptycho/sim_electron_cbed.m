@@ -49,6 +49,7 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     
     % 
     parse_param.addParameter('gpu_id', 1, @isnumeric )
+    parse_param.addParameter('overwrite_data', 0, @islogical )
 
     % simulation parameters
     %parse_param.addParameter('N_data', 1, @isnumeric) % number of datasets to be simulated
@@ -94,6 +95,7 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     par_probe.df = param_input.probe_df; %defocus in angstrom
     par_probe.C3 = param_input.probe_c3; %third-order spherical aberration in angstrom
     par_probe.C5 = param_input.probe_c5; %fifth-order spherical aberration in angstrom
+    par_probe.C7 = param_input.probe_c7; %seventh-order spherical aberration in angstrom
     par_probe.f_a2 = param_input.probe_f_a2; %azimuthal orientation in radian
     par_probe.theta_a2 = param_input.probe_theta_a2; %twofold astigmatism in angstrom
     par_probe.f_a3 = param_input.probe_f_a3; %threefold astigmatism in angstrom
@@ -105,6 +107,7 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     dk = 1/dx/N_dp_orig; %fourier-space pixel size in 1/A
 
     [probe_true, ~] = make_tem_probe(dx, N_dp_orig, par_probe);
+    %probe_true = crop_pad(probe_true_init, [N_dp_orig, N_dp_orig]);
 	%probe_true = gpuArray(probe_true);
 
     %% save initial probe and parameters
@@ -117,7 +120,8 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     p.dk = dk*N_dp_orig/N_dp;
     p.N_scans_h = N_scans_h;
     p.N_scans_v = N_scans_v;
-    save(fullfile(param_input.output_path,'init_probe'),'probe','p','par_probe')
+    save(fullfile(param_input.output_path, 'init_probe'), 'probe', 'p', 'par_probe')
+    save(fullfile(param_input.output_path, 'true_probe'), 'probe_true', 'par_probe')
 
     %% Generate scan positions
     pos_h = (1+(0:N_scans_h-1)*param_input.scan_step_size);
@@ -138,7 +142,6 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     pos_true_h = pos_true_h + max_position_error*(rand(size(pos_true_h))*2-1);
     pos_true_v = pos_true_v + max_position_error*(rand(size(pos_true_v))*2-1);
 
-    %
     %calculate indicies for all scans
     N_scan = length(pos_true_h);
     %position = pi(integer) + pf(fraction)
@@ -155,8 +158,15 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     %% generate diffraction patterns
     %dp = gpuArray(zeros(N_dp, N_dp, N_scan));
     dp = zeros(N_dp, N_dp, N_scan);
+    
+    if isfile(fullfile(param_input.output_path, 'data_roi0_dp.hdf5')) && param_input.overwrite_data
+        delete(fullfile(param_input.output_path, 'data_roi0_dp.hdf5'));
+        delete(fullfile(param_input.output_path, 'data_roi0_para.hdf5'));
+    elseif isfile(fullfile(param_input.output_path, 'data_roi0_dp.hdf5'))
+        return
+    end
+    
     %snr = ones(N_scan, 1)*inf; %signal-to-noise ratio of each diffraction pattern
-
     for i=1:N_scan
         probe_s = shift(probe_true, dx, dx, ph_f(i), pv_f(i));
         object_roi = object(ind_v_lb(i):ind_v_ub(i),ind_h_lb(i):ind_h_ub(i));
@@ -164,10 +174,10 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
 
         %FFT to get diffraction pattern
         dp_true = abs(fftshift(fft2(ifftshift(psi)))).^2;
-        %dp(:,:,i) = dp_true(:,:,i);
 
-        dp_true = imresize(dp_true, N_dp/N_dp_orig, 'box');
-        dp_true(dp_true<0) = 0;
+        %dp_true = imresize(dp_true, N_dp/N_dp_orig, 'box');
+        dp_true = dp_true(1:N_dp_orig/N_dp:end, 1:N_dp_orig/N_dp:end);
+        %dp_true(dp_true<0) = 0;
         dp_temp = dp_true;
         
         %Add poisson noise
@@ -189,21 +199,12 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     %save_dir = fullfile(base_path, data_path, strcat('data',num2str(j)));
     if ~exist(param_input.output_path, 'dir'); mkdir(param_input.output_path); end
     
-    save_name = strcat('data_roi0_dp.hdf5'); %save diffraction patterns
-    %save_name = strcat('data_roi0_dp.h5'); %save diffraction patterns
-    if isfile(fullfile(param_input.output_path,save_name))  
-        delete(fullfile(param_input.output_path,save_name));
-    end
-    h5create(fullfile(param_input.output_path,save_name), '/dp', size(dp), 'ChunkSize',[size(dp,1) size(dp,1), 1], 'Deflate',4)
-    h5write(fullfile(param_input.output_path,save_name), '/dp', dp)
+    h5create(fullfile(param_input.output_path, 'data_roi0_dp.hdf5'), '/dp', size(dp), 'ChunkSize',[size(dp,1) size(dp,1), 1], 'Deflate',4)
+    h5write(fullfile(param_input.output_path, 'data_roi0_dp.hdf5'), '/dp', dp)
 
-    save_name = strcat('data_roi0_para.hdf5'); %save scan positions
-    if isfile(fullfile(param_input.output_path,save_name))  
-        delete(fullfile(param_input.output_path,save_name));
-    end
-    h5create(fullfile(param_input.output_path,save_name), '/ppX', size(pos_true_h))
-    h5write(fullfile(param_input.output_path,save_name), '/ppX', pos_true_h)
-    h5create(fullfile(param_input.output_path,save_name), '/ppY', size(pos_true_v))
-    h5write(fullfile(param_input.output_path,save_name), '/ppY', pos_true_v)
-
+    h5create(fullfile(param_input.output_path, 'data_roi0_para.hdf5'), '/ppX', size(pos_true_h))
+    h5write(fullfile(param_input.output_path, 'data_roi0_para.hdf5'), '/ppX', pos_true_h)
+    h5create(fullfile(param_input.output_path, 'data_roi0_para.hdf5'), '/ppY', size(pos_true_v))
+    h5write(fullfile(param_input.output_path, 'data_roi0_para.hdf5'), '/ppY', pos_true_v)
+    
 end

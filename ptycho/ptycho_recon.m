@@ -48,7 +48,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     parse_param.addParameter('opt_errmetric',  'L1', @ischar)
     parse_param.addParameter('reg_mu',  0, @isnumeric)
     parse_param.addParameter('positivity_constraint_object', 0, @isnumeric)
-    parse_param.addParameter('Ndp_presolve', inf, @isnumeric)
+    parse_param.addParameter('Ndp_presolve', -1, @isnumeric)
     parse_param.addParameter('diff_pattern_blur', 0, @isnumeric)
     
     parse_param.addParameter('dp_custom_fliplr', 0, @isnumeric)
@@ -74,6 +74,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     parse_param.addParameter('cen_dp_x', 0, @isnumeric)
 
     parse_param.addParameter('avg_photon_threshold', 0, @isnumeric)
+    parse_param.addParameter('avg_photon_threshold_ub', 0, @isnumeric)
 
     parse_param.addParameter('detector_dist', 1.0, @isnumeric)
     parse_param.addParameter('energy', 8.8, @isnumeric)
@@ -185,6 +186,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     p.   scan_number = param_input.scan_number;                                    % Multiple scan numbers for shared scans
 
     p.   avg_photon_threshold = param_input.avg_photon_threshold;
+    p.   avg_photon_threshold_ub = param_input.avg_photon_threshold_ub;
 
     % Geometry
     p.   z = param_input.detector_dist;                         % Distance from object to detector 
@@ -425,7 +427,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     % general 
     eng. time_limit = param_input.time_limit;
     eng. number_iterations = param_input.Niter;          % number of iterations for selected method 
-    if Ndp > double(param_input.Ndp_presolve)
+    if param_input.Ndp_presolve > 0
         eng. asize_presolve = [param_input.Ndp_presolve, param_input.Ndp_presolve];      % crop or pad diffraction patterns to "asize_presolve" size
     else
         eng. asize_presolve = []; 
@@ -509,12 +511,12 @@ function [out, eng, data_error] = ptycho_recon(param)
                                               % 'edge': append 1st or last layers
                                               % 'avg': append averaged layer
         eng. init_layer_scaling_factor = param_input.init_layer_scaling_factor;   % Added by YJ. Scale all layers. Default: 1 (no scaling). Useful when delta_z is changed
-        eng. save_images = {'obj_ph_stack','obj_ph_sum','probe','probe_mag','probe_prop_mag'};
+        eng. save_images = {'obj_ph_stack', 'obj_ph_sum', 'probe', 'probe_mag', 'probe_prop_mag'};
     else
         eng. delta_z = [];                     % if not empty, use multilayer ptycho extension , see ML_MS code for example of use, [] == common single layer ptychography , note that delta_z provides only relative propagation distance from the previous layer, ie delta_z can be either positive or negative. If preshift_ML_probe == false, the first layer is defined by position of initial probe plane. It is useful to use eng.momentum for convergence acceleration 
         eng. regularize_layers = 0;            % multilayer extension: 0<R<<1 -> apply regularization on the reconstructed object layers, 0 == no regularization, 0.01 == weak regularization that will slowly symmetrize information content between layers 
         eng. preshift_ML_probe = true;         % multilayer extension: if true, assume that the provided probe is reconstructed in center of the sample and the layers are centered around this position 
-        eng. save_images = {'obj_ph','probe_mag','probe'};
+        eng. save_images = {'obj_ph', 'probe_mag', 'probe'};
     end
     
     % other extensions 
@@ -579,3 +581,4 @@ function [out, eng, data_error] = ptycho_recon(param)
     end
     toc
 end
+
