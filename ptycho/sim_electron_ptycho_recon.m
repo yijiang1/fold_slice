@@ -46,6 +46,9 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     parser.addParameter('crop_y', 0, @isnumeric)
     parser.addParameter('ground_truth_recon', '', @ischar)
 
+    % 
+    parser.addParameter('overwrite_data', 0, @islogical )
+
     parser.parse(varargin{:})
     r = parser.Results;
 
@@ -85,6 +88,7 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     par_sim.output_path = fullfile(base_path, data_path, 'data1');
     par_sim.dx = par.dx;
     par_sim.object = par.object_true;
+    par_sim.overwrite_data = par.overwrite_data;
 
     if length(par.GPU_list)>1 %assume parallel processing
         t = getCurrentTask;
@@ -144,7 +148,7 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     disp('Evaluate reconstruction...')
     par_eval = {};
     par_eval.file1 = fullfile(eng.fout, sprintf('Niter%d.mat', par_recon.Niter));
-	par_eval.file2 = par.ground_truth_recon;
+    par_eval.file2 = par.ground_truth_recon;
     
     par_eval.crop_y = par.crop_y;
     par_eval.crop_x = par.crop_x;
@@ -172,16 +176,16 @@ function [base_path] = generate_data_path(base_path, param_var)
             case 'df'
                 par_format = '_df%0.2fnm';
             case 'cs'
-                par_format = '_cs%0.2fmm';
+                par_format = '_cs%0.3fmm';
             case 'c5'
-                par_format = '_c5%0.2fm';
+                par_format = '_c5_%0.3fm';
             case 'c7'
-                par_format = '_c7%0.2fm';
-            case 'fa2'
+                par_format = '_c7_%0.3fm';
+            case 'f_a2'
                 par_format = '_fa2_%0.2fnm';
             case 'theta_a2'
                 par_format = '_theta_a2_%0.2frad';
-            case 'fa3'
+            case 'f_a3'
                 par_format = '_fa3_%0.2fum';
             case 'theta_a3'
                 par_format = '_theta_a3_%0.2frad';
@@ -197,6 +201,6 @@ function [base_path] = generate_data_path(base_path, param_var)
                 par_format = ['_', param_var{i}, '%d'];
         end
         base_path = sprintf([base_path, par_format], param_var{i+1});
-    end    
+    end
 end
 
