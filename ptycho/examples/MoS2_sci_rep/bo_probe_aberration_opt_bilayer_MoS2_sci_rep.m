@@ -4,7 +4,7 @@ clear
 
 %%
 par = {}; %basic parameters
-par.base_path = '/mnt/micdata3/Yi_Jiang/simulation/project_probe/bilayer_MoS2/';
+par.base_path = '/your/project/directory/bilayer_MoS2/';
 par.field_of_view = 36; %scan field of view in angstroms
 par.scan_step_size = 4; %scan step size in angstroms
 par.N_dp = 128; %size of experimental diffraction pattern in pixels
@@ -37,7 +37,6 @@ par.dx = 0.125; %real-space pixel size in angstrom
 disp('Load test object...done')
 
 %% Test one simulation
-%{
 par.dose = 1e5;
 par.alpha_max = 20;
 par.GPU_list = [1];
@@ -48,18 +47,16 @@ else
     par.base_data_path = strcat('dose_inf');
 end
 
-par.base_data_path = sprintf([par.base_data_path,'_Ndp%d_ss%0.2fA_a%0.2fmrad/probe'], par.N_dp, par.scan_step_size, par.alpha_max);
+par.base_data_path = sprintf([par.base_data_path, '_Ndp%d_ss%0.2fA_a%0.2fmrad/probe'], par.N_dp, par.scan_step_size, par.alpha_max);
 
 recon_score = sim_electron_ptycho_recon(par, 'df', 30, 'cs', 0);
-%}
 
 %% Use BO-GP to find optimal aberrations
 clc; close all; set(0, 'DefaultTextInterpreter', 'none')
 
 par.dose = 1e5;
 par.alpha_max = 20;
-par.GPU_list = [6,7,8,9,10];
-%par.GPU_list = [2];
+par.GPU_list = [1];
 
 aberrations = 'df';
 
@@ -88,7 +85,7 @@ if par.dose < inf
 else
     par.base_data_path = strcat('dose_inf');
 end
-par.base_data_path = sprintf([par.base_data_path,'_Ndp%d_ss%0.1fA_a%0.1fmrad/probe'], par.N_dp, par.scan_step_size, par.alpha_max);
+par.base_data_path = sprintf([par.base_data_path, '_Ndp%d_ss%0.1fA_a%0.1fmrad/probe'], par.N_dp, par.scan_step_size, par.alpha_max);
 par.base_data_path = [par.base_data_path, '_', aberrations, '/probe'];
 
 % Prepare simulation function
@@ -138,14 +135,14 @@ end
 % Begin BO
 results = bayesopt(func, func_inputs,...
     'Verbose', bo_verbose,...
-    'AcquisitionFunctionName','expected-improvement-plus',...
-    'IsObjectiveDeterministic',false,...
+    'AcquisitionFunctionName', 'expected-improvement-plus',...
+    'IsObjectiveDeterministic', false,...
     'MaxObjectiveEvaluations', N_eval,...
     'NumSeedPoints', N_init,...
     'PlotFcn',plot_funcs,'UseParallel', N_workers>1);
 
 % Save BO result
-save_path = sprintf([par.base_path,'/summary/bo_dose%d_Ndp%d_ss%0.1fA_a%0.1fmrad/'], par.dose, par.N_dp, par.scan_step_size, par.alpha_max);
+save_path = sprintf([par.base_path, '/summary/bo_dose%d_Ndp%d_ss%0.1fA_a%0.1fmrad/'], par.dose, par.N_dp, par.scan_step_size, par.alpha_max);
 save_name = [aberrations, '_.mat'];
 
 if ~exist(save_path, 'dir'); mkdir(save_path); end
