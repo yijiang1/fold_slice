@@ -6,7 +6,7 @@
 % different folder from fold_slice 
 
 %% Step 2: load data
-data_dir = '/home/beams2/YJIANG/ptychography/electron/mose2/nat_comm/'; %change this
+data_dir = '/your/project/directory/mose2/nat_comm/'; %change this
 load(strcat(data_dir,'rawdata_1x_crop.mat'))
 
 %% Step 3: go back to .../fold_slice/ptycho and pre-process data
