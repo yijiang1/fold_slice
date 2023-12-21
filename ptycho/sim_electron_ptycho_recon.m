@@ -194,7 +194,7 @@ function [base_path] = generate_data_path(base_path, param_var)
             case 'N_dp_orig'
                 par_format = '_Ndp_orig%d';
             case 'scan_step_size'
-                par_format = '_stepsize%0.1fA';
+                par_format = '_stepsize%0.2fA';
             case 'dose'
                 par_format = '_dose%d';
             otherwise

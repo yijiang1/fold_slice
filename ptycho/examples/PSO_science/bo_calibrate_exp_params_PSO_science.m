@@ -10,7 +10,7 @@ par.scan_number = 1;
 par.beam_source = 'electron';
 
 par.Ndp = 256;
-par.base_path = '/home/beams2/YJIANG/ptychography/electron/PrScO3/science/';
+par.base_path = '/your/project/directory/PrScO3/science/';
 
 par.scan_format = '%01d';
 par.scan_string_format = '%01d';

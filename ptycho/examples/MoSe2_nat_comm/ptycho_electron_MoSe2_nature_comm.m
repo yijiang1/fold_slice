@@ -3,7 +3,7 @@ addpath(strcat(pwd,'/utils/'))
 addpath(core.find_base_package)
 
 %%%%%%%%%%%%%%%%%%%% data parameters %%%%%%%%%%%%%%%%%%%%
-base_path = '/home/beams2/YJIANG/ptychography/electron/mose2/nat_comm/';
+base_path = '/your/project/directory/mose2/nat_comm/';
 roi_label = '0_Ndp128';
 scan_number = 1;
 scan_string_format = '%01d';

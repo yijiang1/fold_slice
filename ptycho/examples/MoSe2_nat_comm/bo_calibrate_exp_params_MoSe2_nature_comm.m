@@ -10,7 +10,7 @@ par.scan_number = 1;
 par.beam_source = 'electron';
 
 par.Ndp = 128;
-par.base_path = '/home/beams2/YJIANG/ptychography/electron/mose2/nat_comm/';
+par.base_path = '/your/project/directory/mose2/nat_comm/';
 
 par.scan_format = 'scan%d';
 par.scan_string_format = 'scan%d';
