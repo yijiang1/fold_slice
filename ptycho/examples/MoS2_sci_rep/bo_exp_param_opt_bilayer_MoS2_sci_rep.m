@@ -53,7 +53,7 @@ clc; close all; set(0, 'DefaultTextInterpreter', 'none')
 
 par.dose = 1e5;
 %par.alpha_max = 20;
-par.GPU_list = [6,7,8,9,10];
+par.GPU_list = [1];
 
 bo_verbose = 2;
 plot_funcs = {@plotObjectiveModel, @plotMinObjective};
