@@ -53,24 +53,26 @@ par.grouping = 90;
 par.apply_multimodal_update = true;
 
 %% Step 1.5 (optional): Run a single reconstruction to check parameters
-GPU_list = 1;
+clc
+par.GPU_list = 2;
 defocus = -450;
-rot_ang = 30;
-alpha = 21.4;
-thickness = 0; %single-slice ptycho
-data_error = ptycho_recon_exp_data_electron(par, defocus, alpha, rot_ang, thickness, GPU_list);
+par.rot_ang = 30;
+par.alpha_max = 21.4;
+par.thickness = 0; %single-slice ptycho
+par.output_dir_suffix_base = sprintf('_rot_ang%0.1f', par.rot_ang);
+data_error = ptycho_recon_exp_data(par, 'defocus', defocus);
 
-%% Step 2: Use Bayesian optimization with Gaussian processes to find experimental parameters that minimize data error 
+%% Step 2.1: Use Bayesian optimization with Gaussian processes to find experimental parameters that minimize data error 
 close all
-rot_ang = 30;
-%rot_ang = optimizableVariable('rot_ang',[-90, 90]); %degrees 
-alpha = 21.4;
-defocus = optimizableVariable('defocus',[-1000, 1000]); %angstroms
-%defocus = -550;
-GPU_list = [1];
-thickness = 0; %single-slice ptycho
+clc
+par.rot_ang = 30;
+par.alpha_max = 21.4;
+defocus = optimizableVariable('defocus', [-1000, 1000]); %angstroms
+par.GPU_list = [1];
+par.thickness = 0; %single-slice ptycho
+par.output_dir_suffix_base = sprintf('_rot_ang%0.1f', par.rot_ang);
 
-N_workers = length(GPU_list);
+N_workers = length(par.GPU_list);
 if N_workers>1
     delete(gcp('nocreate'))
     c = parcluster('local');
@@ -78,14 +80,44 @@ if N_workers>1
     p = parpool(c);
 end
 
-fun = @(x)ptycho_recon_exp_data_electron(par, x.defocus, alpha, rot_ang, thickness, GPU_list);
+fun = @(x)ptycho_recon_exp_data(par, 'defocus', x.defocus);
 results = bayesopt(fun, [defocus],...
-    'Verbose',2,...
-    'AcquisitionFunctionName','expected-improvement-plus',...
-    'IsObjectiveDeterministic',false,...
-    'MaxObjectiveEvaluations', 30,...
-    'NumSeedPoints',N_workers,...
-    'PlotFcn',{@plotObjectiveModel, @plotMinObjective},'UseParallel', N_workers>1);
+    'Verbose', 2,...
+    'AcquisitionFunctionName', 'expected-improvement-plus',...
+    'IsObjectiveDeterministic', false,...
+    'MaxObjectiveEvaluations', 20,...
+    'NumSeedPoints', 3,...
+    'PlotFcn', {@plotObjectiveModel, @plotMinObjective}, 'UseParallel', N_workers>1);
+
+delete(gcp('nocreate'))
+
+%% Step 2.2: Use Bayesian optimization with Gaussian processes to find experimental parameters that minimize data error 
+close all
+clc
+par.alpha_max = 21.4;
+par.GPU_list = [1,2,3,4,5];
+par.thickness = 0;
+par.output_dir_suffix_base = '';
+
+rot_ang = optimizableVariable('rot_ang', [-90, 90]); %degrees 
+defocus = optimizableVariable('defocus', [-1000, 1000]); %angstroms
+
+N_workers = length(par.GPU_list);
+if N_workers>1
+    delete(gcp('nocreate'))
+    c = parcluster('local');
+    c.NumWorkers = N_workers;
+    p = parpool(c);
+end
+
+fun = @(x)ptycho_recon_exp_data(par, 'defocus', x.defocus, 'rot_ang', x.rot_ang);
+results = bayesopt(fun, [defocus, rot_ang],...
+    'Verbose', 2,...
+    'AcquisitionFunctionName', 'expected-improvement-plus',...
+    'IsObjectiveDeterministic', false,...
+    'MaxObjectiveEvaluations', 50,...
+    'NumSeedPoints', 5,...
+    'PlotFcn', {@plotObjectiveModel, @plotMinObjective}, 'UseParallel', N_workers>1);
 
 delete(gcp('nocreate'))
 

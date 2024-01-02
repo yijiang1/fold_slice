@@ -42,7 +42,7 @@ par.normalize_init_probe = true;
 
 par.output_dir_base = par.base_path;
 par.Niter = 20;
-par.Niter_save_results_every =  par.Niter;
+par.Niter_save_results_every = par.Niter;
 
 par.eng_name = 'GPU_MS';
 par.method = 'MLs';
@@ -58,25 +58,27 @@ par.variable_probe_modes = 1;
 par.Ndp_presolve = 128;
 
 %% Step 1.5 (optional): Run a single reconstruction to check parameters
-GPU_list = 1;
+par.GPU_list = 1;
+par.rot_ang = 0;
+par.alpha_max = 21.4;
+
 defocus = -200;
-rot_ang = 0;
-alpha = 21.4;
 thickness = 210; %in angstroms
-data_error = ptycho_recon_exp_data_electron(par, defocus, alpha, rot_ang, thickness, GPU_list);
+
+par.output_dir_suffix_base = '';
+data_error = ptycho_recon_exp_data(par, 'defocus', defocus, 'thickness', thickness);
 
 %% Step 2: Use Bayesian optimization with Gaussian processes to find experimental parameters that minimize data error
 % Note: Parallel BO is generally recommended for multislice reconstructions
 close all
-rot_ang = 0;
-alpha = 21.4;
-defocus = optimizableVariable('defocus',[-1000, 1000]); %angstroms
-%defocus = -200;
-GPU_list = [1,2,3,4,5,6,7,8,9,10];
-%thickness = 210; %angstroms
-thickness = optimizableVariable('thickness',[100, 300]); %angstroms
+par.rot_ang = 0;
+par.alpha_max = 21.4;
+par.GPU_list = [1,2,3,4,5];
 
-N_workers = length(GPU_list);
+defocus = optimizableVariable('defocus', [-1000, 1000]); %angstroms
+thickness = optimizableVariable('thickness', [50, 400]); %angstroms
+
+N_workers = length(par.GPU_list);
 if N_workers>1
     delete(gcp('nocreate'))
     c = parcluster('local');
@@ -84,14 +86,13 @@ if N_workers>1
     p = parpool(c);
 end
 
-fun = @(x)ptycho_recon_exp_data_electron(par, x.defocus, alpha, rot_ang, x.thickness, GPU_list);
-results = bayesopt(fun, [defocus, thickness],...
-    'Verbose',2,...
-    'AcquisitionFunctionName','expected-improvement-plus',...
-    'IsObjectiveDeterministic',false,...
+fun = @(x)ptycho_recon_exp_data(par, 'thickness', x.thickness, 'defocus', x.defocus);
+results = bayesopt(fun, [thickness, defocus],...
+    'Verbose', 2,...
+    'AcquisitionFunctionName', 'expected-improvement-plus',...
+    'IsObjectiveDeterministic', false,...
     'MaxObjectiveEvaluations', 50,...
-    'NumSeedPoints',N_workers,...
-    'PlotFcn',{@plotObjectiveModel, @plotMinObjective},'UseParallel', N_workers>1);
+    'NumSeedPoints', N_workers,...
+    'PlotFcn', {@plotObjectiveModel, @plotMinObjective}, 'UseParallel', N_workers>1);
 
 delete(gcp('nocreate'))
-
