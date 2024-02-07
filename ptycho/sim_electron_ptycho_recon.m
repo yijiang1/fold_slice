@@ -10,8 +10,9 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     parser.addParameter('field_of_view',  60 , @isnumeric) %scan field of view in angstroms
     parser.addParameter('scan_step_size',  4 , @isnumeric)  %scan step size in angstroms
     parser.addParameter('dose',  1e6 , @isnumeric)  %total electron dose (e/A^2)
-    parser.addParameter('N_dp',  128 , @isnumeric)  %size of experimental diffraction pattern in pixels
-    parser.addParameter('N_dp_orig',  1024 , @isnumeric)  %size of true diffraction pattern in pixels
+    parser.addParameter('N_dp',  256 , @isnumeric)  %size of the experimental diffraction pattern in pixels
+    parser.addParameter('N_dp_crop',  1024 , @isnumeric)  %size of the cropped diffraction pattern in pixels
+    parser.addParameter('N_dp_orig',  1024 , @isnumeric)  %size of the full diffraction pattern in pixels
     parser.addParameter('max_position_error',  0 , @isnumeric)  %max scan position error in angstroms
     parser.addParameter('voltage',  80 , @isnumeric)  %beam voltage in kV
 
@@ -48,6 +49,7 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
 
     % 
     parser.addParameter('overwrite_data', 0, @islogical )
+    parser.addParameter('data_path_format', 'gpu_id', @ischar )
 
     parser.parse(varargin{:})
     r = parser.Results;
@@ -61,7 +63,7 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     end
     
     %% check inputs
-    assert(~isempty(par.ground_truth_recon), 'Ground truth recon file cannot be empty!')
+    %assert(~isempty(par.ground_truth_recon), 'Ground truth recon file cannot be empty!')
 
     %% initialize parameters
     base_path = par.base_path;
@@ -69,8 +71,10 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     par_sim.field_of_view = par.field_of_view; %scan field of view in angstroms
     par_sim.scan_step_size = par.scan_step_size; %scan step size in angstroms
     par_sim.dose = par.dose; %total electron dose (e/A^2)
-    par_sim.N_dp = par.N_dp; %size of experimental diffraction pattern in pixels
-    par_sim.N_dp_orig = par.N_dp_orig; %size of true diffraction pattern in pixels
+    par_sim.N_dp = par.N_dp; %size of the experimental diffraction pattern in pixels
+    par_sim.N_dp_crop = par.N_dp_crop; %size of the cropped diffraction pattern in pixels
+    par_sim.N_dp_orig = par.N_dp_orig; %size of the full diffraction pattern in pixels
+
     par_sim.max_position_error = par.max_position_error; %max scan position error in angstroms
     par_sim.voltage = par.voltage; %beam voltage in kV
 
@@ -84,21 +88,28 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     par_sim.probe_f_a3 = par.f_a3*1e-6/1e-10; %angstrom
     par_sim.probe_theta_a3 = par.theta_a3; %rad
 
-    data_path = generate_data_path(par.base_data_path, varargin);
-    par_sim.output_path = fullfile(base_path, data_path, 'data1');
-    par_sim.dx = par.dx;
-    par_sim.object = par.object_true;
-    par_sim.overwrite_data = par.overwrite_data;
-
     if length(par.GPU_list)>1 %assume parallel processing
         t = getCurrentTask;
         t = t.ID;
         gpu_id = par.GPU_list(t);
     else
         gpu_id = par.GPU_list;
+        t = 1;
     end
     par_sim.gpu_id = gpu_id;
-
+    
+    switch par.data_path_format
+        case 'gpu_id'
+            data_path = strcat(par.base_data_path, num2str(gpu_id));
+        case 'exp_params'
+            data_path = generate_data_path(par.base_data_path, varargin);
+    end
+    
+    par_sim.output_path = fullfile(base_path, data_path, 'data1');
+    par_sim.dx = par.dx;
+    par_sim.object = par.object_true;
+    par_sim.overwrite_data = par.overwrite_data;
+    
     %% start simulation
     disp('Simulate diffraction patterns...')
 
@@ -145,26 +156,29 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     disp('Reconstruction...done')
 
     %% evaluate ptycho recon
-    disp('Evaluate reconstruction...')
-    par_eval = {};
-    par_eval.file1 = fullfile(eng.fout, sprintf('Niter%d.mat', par_recon.Niter));
-    par_eval.file2 = par.ground_truth_recon;
-    
-    par_eval.crop_y = par.crop_y;
-    par_eval.crop_x = par.crop_x;
-    
-    par_eval.electron = true;
-    par_eval.verbose_level = 0;
-    par_eval.metric = par.metric;
-    recon_score = compare_two_ptycho_recons(par_eval);
+    if isempty(par.ground_truth_recon)
+        recon_score = 0;
+    else
+        disp('Evaluate reconstruction...')
+        par_eval = {};
+        par_eval.file1 = fullfile(eng.fout, sprintf('Niter%d.mat', par_recon.Niter));
+        par_eval.file2 = par.ground_truth_recon;
 
-    switch par_eval.metric
-        case 'frc_1bit'
-        otherwise
-            recon_score = 1 - recon_score;
+        par_eval.crop_y = par.crop_y;
+        par_eval.crop_x = par.crop_x;
+
+        par_eval.electron = true;
+        par_eval.verbose_level = 0;
+        par_eval.metric = par.metric;
+        recon_score = compare_two_ptycho_recons(par_eval);
+
+        switch par_eval.metric
+            case 'frc_1bit'
+            otherwise
+                recon_score = 1 - recon_score;
+        end
+        disp('Evaluate reconstruction...done')
     end
-    disp('Evaluate reconstruction...done')
-    
 end
 
 function [base_path] = generate_data_path(base_path, param_var)

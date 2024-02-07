@@ -23,8 +23,9 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     parse_param.addParameter('output_path', '', @ischar)
 
     parse_param.addParameter('field_of_view', 36, @isnumeric) %scan FOV in angstroms
-    parse_param.addParameter('N_dp', 256, @isnumeric) %size of diffraction pattern in pixels 
-    parse_param.addParameter('N_dp_orig', 256, @isnumeric) %original size of diffraction pattern in pixels
+    parse_param.addParameter('N_dp', 256, @isnumeric) %size of the experimental diffraction pattern in pixels
+    parse_param.addParameter('N_dp_crop', 1024, @isnumeric) %size of the cropped diffraction pattern in pixels
+    parse_param.addParameter('N_dp_orig', 1024, @isnumeric) %size of the full diffraction pattern in pixels
     parse_param.addParameter('scan_step_size', 2, @isnumeric) %scan step size in angstroms
     parse_param.addParameter('max_position_error', 0, @isnumeric) %max random position error in angstroms
     parse_param.addParameter('dose', 0, @isnumeric) %total electron dose in # of electrons per angstroms^2
@@ -70,6 +71,8 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
     field_of_view = param_input.field_of_view;
     N_dp = param_input.N_dp;
     N_dp_orig = param_input.N_dp_orig;
+    N_dp_crop = param_input.N_dp_crop;
+
     scan_step_size = param_input.scan_step_size;
     max_position_error = param_input.max_position_error;
     
@@ -111,13 +114,14 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
 	%probe_true = gpuArray(probe_true);
 
     %% save initial probe and parameters
-    probe = crop_pad(probe_true, [N_dp, N_dp]);
+    probe = probe_true(1:N_dp_orig/N_dp_crop:end, 1:N_dp_orig/N_dp_crop:end);
+    probe = crop_pad(probe, [N_dp, N_dp]);
     if ~exist(param_input.output_path, 'dir'); mkdir(param_input.output_path); end
     
     p = {};
     p.binning = false;
     p.detector.binning = false;
-    p.dk = dk*N_dp_orig/N_dp;
+    p.dk = dk * N_dp_crop / N_dp;
     p.N_scans_h = N_scans_h;
     p.N_scans_v = N_scans_v;
     save(fullfile(param_input.output_path, 'init_probe'), 'probe', 'p', 'par_probe')
@@ -175,8 +179,10 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
         %FFT to get diffraction pattern
         dp_true = abs(fftshift(fft2(ifftshift(psi)))).^2;
 
-        %dp_true = imresize(dp_true, N_dp/N_dp_orig, 'box');
-        dp_true = dp_true(1:N_dp_orig/N_dp:end, 1:N_dp_orig/N_dp:end);
+        dp_true = crop_pad(dp_true, [N_dp_crop, N_dp_crop]);
+        dp_true = dp_true(1:N_dp_crop/N_dp:end, 1:N_dp_crop/N_dp:end);
+        %dp_true = imresize(dp_true, N_dp/N_dp_crop, 'box');
+        
         %dp_true(dp_true<0) = 0;
         dp_temp = dp_true;
         

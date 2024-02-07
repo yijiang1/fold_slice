@@ -6,8 +6,9 @@ clear
 par = {}; %basic parameters
 par.base_path = '/your/project/directory/bilayer_MoS2/';
 par.field_of_view = 36; %scan field of view in angstroms
-par.N_dp = 128; %size of experimental diffraction pattern in pixels
-par.N_dp_orig = 1024; %size of true diffraction pattern in pixels
+par.N_dp = 128; %size of the experimental diffraction pattern in pixels
+par.N_dp_orig = 1024; %size of the true diffraction pattern in pixels
+par.N_dp_crop = 1024; %size of the cropped diffraction pattern in pixels
 par.max_position_error = 0; %max scan position errors in angstroms
 par.voltage = 80;
 
@@ -24,12 +25,13 @@ par.crop_y = 120;
 par.crop_x = 120;
 
 par.overwrite_data = true;
+par.data_path_format =  'exp_params';
 
 %% load true object
 disp('Load test object...')
 addpath(fullfile(pwd, 'utils_electron'))
 load('Bilayer_MoS2_30deg_0p125_2048x2048_alt.mat')
-proj_potentials = padarray(sigmaV, [1024, 1024], 'circular', 'post');
+proj_potentials = padarray(sigmaV, [1024, 1024], 'circular', 'both');
 %create a complex object
 par.object_true = ones(size(proj_potentials)).*exp(1i*proj_potentials);
 par.dx = 0.125; %real-space pixel size in angstrom
