@@ -144,7 +144,7 @@ function [score] = compare_two_ptycho_recons(param)
             end
             params.crop{i} = crop_roi;       
         else
-            disp(fullfile(base_path,sub_dir,recon_dir))
+            disp(fullfile(base_path, sub_dir, recon_dir))
             error('No recon file found')
         end
     end
@@ -157,7 +157,7 @@ function [score] = compare_two_ptycho_recons(param)
         case 'frc_1bit'
             score = resolution(1);
         case 'frc_AUC'
-            score = 1 - stat.fsc_mean;
+            score = stat.fsc_mean;
         case 'ssim'
             score = ssim(subim1_ph, subim2_ph);
         case 'psnr'

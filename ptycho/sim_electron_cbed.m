@@ -167,6 +167,7 @@ function [dp, probe_true, p] = sim_electron_cbed(param)
         delete(fullfile(param_input.output_path, 'data_roi0_dp.hdf5'));
         delete(fullfile(param_input.output_path, 'data_roi0_para.hdf5'));
     elseif isfile(fullfile(param_input.output_path, 'data_roi0_dp.hdf5'))
+        disp('Data already exists - Skip simulation.')
         return
     end
     
