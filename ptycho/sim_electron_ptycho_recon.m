@@ -38,6 +38,7 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     parser.addParameter('opt_errmetric',  'L1', @ischar)
     parser.addParameter('apply_multimodal_update', 0, @islogical)
     parser.addParameter('probe_position_search', inf, @isnumeric)
+    parser.addParameter('recon_output_dir_suffix', '', @ischar)
 
     parser.addParameter('GPU_list', 1 , @isnumeric ) %GPU IDs for reconstruction
 
@@ -127,6 +128,8 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     par_recon.gpu_id = gpu_id;
 
     par_recon.method = par.method;
+    par_recon.opt_errmetric = par.opt_errmetric;
+
     par_recon.verbose_level = 0;
 
     par_recon.scan_number = 1;
@@ -151,18 +154,20 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
     par_recon.scan_type = 'default';
 
     par_recon.output_dir_base = fullfile(base_path, data_path, '/');
-
+    par_recon.output_dir_suffix = par.recon_output_dir_suffix;
+    
     [~, eng, ~] = ptycho_recon(par_recon);
     disp('Reconstruction...done')
 
     %% evaluate ptycho recon
     if isempty(par.ground_truth_recon)
+        disp('Ground truth not provided - Skip evaluation.')
         recon_score = 0;
     else
         disp('Evaluate reconstruction...')
         par_eval = {};
-        par_eval.file1 = fullfile(eng.fout, sprintf('Niter%d.mat', par_recon.Niter));
-        par_eval.file2 = par.ground_truth_recon;
+        par_eval.file1 = par.ground_truth_recon;
+        par_eval.file2 = fullfile(eng.fout, sprintf('Niter%d.mat', par_recon.Niter));
 
         par_eval.crop_y = par.crop_y;
         par_eval.crop_x = par.crop_x;
@@ -174,6 +179,8 @@ function [recon_score] = sim_electron_ptycho_recon(params, varargin)
 
         switch par_eval.metric
             case 'frc_1bit'
+            case 'psnr'
+                recon_score = -recon_score;
             otherwise
                 recon_score = 1 - recon_score;
         end

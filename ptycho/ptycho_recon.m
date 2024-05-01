@@ -60,6 +60,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     parse_param.addParameter('delta_z', 10, @isnumeric)
     parse_param.addParameter('regularize_layers', 0.1, @isnumeric)
     parse_param.addParameter('init_layer_preprocess', '', @ischar)
+    parse_param.addParameter('init_layer_interp', 1, @isnumeric)
     parse_param.addParameter('init_layer_append_mode', '', @ischar)
     parse_param.addParameter('init_layer_scaling_factor', 1, @isnumeric)
     parse_param.addParameter('layer4pos', 0, @isnumeric)
@@ -159,8 +160,10 @@ function [out, eng, data_error] = ptycho_recon(param)
     assert(param_input.Nprobe>=1, 'Invalid number of probes!')
     assert(param_input.grouping>1, 'Invalid group size!')
 
-    assert(param_input.probe_alpha_max>0, 'Invalid aperature size!')
-    
+    if strcmp(param_input.beam_source, 'electron')
+        assert(param_input.probe_alpha_max>0, 'Invalid aperature size!')
+    end
+
     %% set rng seed
     if param_input.rng_seed>=0
         rng(param_input.rng_seed);
@@ -501,11 +504,11 @@ function [out, eng, data_error] = ptycho_recon(param)
             eng. layer4pos = [param_input.layer4pos];  % Added by ZC. speficy which layer is used for position correction ; if empty, then default, ceil(Nlayers/2)
         end
         eng. init_layer_select = [];          % Added by YJ. Select layers in the initial object for pre-processing. If empty (default): use all layers.
-        eng. init_layer_preprocess = '';      % Added by YJ. Specify how to pre-process initial layers
+        eng. init_layer_preprocess = param_input.init_layer_preprocess;      % Added by YJ. Specify how to pre-process initial layers
                                               % '' or 'all' (default): use all layers (do nothing)
                                               % 'avg': average all layers 
                                               % 'interp': interpolate layers using spline method. Need to specify desired depths in init_layer_interp
-        eng. init_layer_interp = [];          % Specify desired depths for interpolation. The depths of initial layers are [1:Nlayer_init]. If empty (default), no interpolation                 
+        eng. init_layer_interp = param_input.init_layer_interp;          % Specify desired depths for interpolation. The depths of initial layers are [1:Nlayer_init]. If empty (default), no interpolation                 
         eng. init_layer_append_mode = param_input.init_layer_append_mode;     % Added by YJ. Specify how to initialize extra layers
                                               % '' or 'vac' (default): add vacuum layers
                                               % 'edge': append 1st or last layers
@@ -564,10 +567,10 @@ function [out, eng, data_error] = ptycho_recon(param)
     eng.save_init_probe = param_input.save_init_probe; %save initial probe function in the .mat file
     
     resultDir = strcat(param_input.output_dir_base,sprintf(p.scan_string_format,  p.scan_number));
-    if ~isempty(p.scan.roi_label); resultDir = [resultDir,'/roi',p.scan.roi_label]; end
-    resultDir = fullfile(resultDir,'/',param_input.output_dir_prefix);
+    if ~isempty(p.scan.roi_label); resultDir = [resultDir,'/roi', p.scan.roi_label]; end
+    resultDir = fullfile(resultDir,'/', param_input.output_dir_prefix);
     
-    eng.extraPrintInfo = strcat('Scan',num2str(p.scan_number(1)));
+    eng.extraPrintInfo = strcat('Scan', num2str(p.scan_number(1)));
     [eng.fout, p.suffix] = generateResultDir(eng, resultDir, param_input.output_dir_suffix);
     [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
