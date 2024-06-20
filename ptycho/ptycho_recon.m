@@ -572,8 +572,8 @@ function [out, eng, data_error] = ptycho_recon(param)
     eng.save_results_every = param_input.Niter_save_results_every;
     eng.save_init_probe = param_input.save_init_probe; %save initial probe function in the .mat file
     
-    resultDir = strcat(param_input.output_dir_base,sprintf(p.scan_string_format,  p.scan_number));
-    if ~isempty(p.scan.roi_label); resultDir = [resultDir,'/roi',p.scan.roi_label]; end
+    resultDir = strcat(param_input.output_dir_base, sprintf(p.scan_string_format, p.scan_number));
+    if ~isempty(p.scan.roi_label); resultDir = [resultDir,'/roi', p.scan.roi_label]; end
     resultDir = fullfile(resultDir,'/', param_input.output_dir_prefix);
     
     eng.extraPrintInfo = strcat('Scan',num2str(p.scan_number(1)));
