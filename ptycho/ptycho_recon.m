@@ -143,7 +143,8 @@ function [out, eng, data_error] = ptycho_recon(param)
     parse_param.addParameter('output_dir_base','', @ischar)
     parse_param.addParameter('output_dir_prefix','', @ischar)
     parse_param.addParameter('output_dir_suffix','', @ischar)
-    
+    parse_param.addParameter('ptycho_matlab_path','', @ischar)
+
     parse_param.addParameter('save_init_probe', 0, @islogical)
 
     parse_param.addParameter('rng_seed', -1, @isnumeric)
@@ -159,11 +160,10 @@ function [out, eng, data_error] = ptycho_recon(param)
     assert(param_input.Niter>=1, 'Invalid number of iterations!')
     assert(param_input.Nprobe>=1, 'Invalid number of probes!')
     assert(param_input.grouping>1, 'Invalid group size!')
-
     if strcmp(param_input.beam_source, 'electron')
         assert(param_input.probe_alpha_max>0, 'Invalid aperature size!')
     end
-
+    
     %% set rng seed
     if param_input.rng_seed>=0
         rng(param_input.rng_seed);
@@ -308,7 +308,13 @@ function [out, eng, data_error] = ptycho_recon(param)
     p.   base_path = strcat(param_input.base_path);                                  % base path : used for automatic generation of other paths 
 
     p.   specfile = '';                                         % Name of spec file to get motor positions and check end of scan, defaut is p.spec_file == p.base_path;
-    p.   ptycho_matlab_path = pwd;                               % cSAXS ptycho package path
+
+    if isempty(param_input.ptycho_matlab_path) 
+        p.   ptycho_matlab_path = pwd; % cSAXS ptycho package path
+    else
+        p.   ptycho_matlab_path = param_input.ptycho_matlab_path; % cSAXS ptycho package path
+    end
+                                   
     p.   cSAXS_matlab_path = '';                                % cSAXS base package path
     p.   ptycho_package_path = pwd;                              % ptycho package path. If empty it uses fullfile(p.base_path,
 
@@ -567,10 +573,10 @@ function [out, eng, data_error] = ptycho_recon(param)
     eng.save_init_probe = param_input.save_init_probe; %save initial probe function in the .mat file
     
     resultDir = strcat(param_input.output_dir_base,sprintf(p.scan_string_format,  p.scan_number));
-    if ~isempty(p.scan.roi_label); resultDir = [resultDir,'/roi', p.scan.roi_label]; end
+    if ~isempty(p.scan.roi_label); resultDir = [resultDir,'/roi',p.scan.roi_label]; end
     resultDir = fullfile(resultDir,'/', param_input.output_dir_prefix);
     
-    eng.extraPrintInfo = strcat('Scan', num2str(p.scan_number(1)));
+    eng.extraPrintInfo = strcat('Scan',num2str(p.scan_number(1)));
     [eng.fout, p.suffix] = generateResultDir(eng, resultDir, param_input.output_dir_suffix);
     [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
