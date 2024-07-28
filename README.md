@@ -12,7 +12,7 @@ https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should fo
 
 # Resources
 1. A customized [foldsliceGPT](https://chat.openai.com/g/g-YKQKluCy9-foldslicegpt) that serves as an AI assistant in X-ray and electron ptychography. It can help users with various tasks such as designing experiments and preparing reconstruction scripts.
-2. fold_slice can be used in our new LLM-based workflow ([PEAR](https://doi.org/10.1093/mam/ozae044.184)). Feel free to contact me if you want to be a alpha tester.
+2. fold_slice can be used in our new LLM-based workflow ([PEAR](https://doi.org/10.1093/mam/ozae044.184)). Feel free to contact me if you want to be an alpha tester.
 3. The files in /fold_slice/ptycho/notes/ could help you understand the overall code structure. Warning: some notes might be outdated.
 4. [Dr. Chia-Hao Lee](https://sites.google.com/view/chiahao-lee/home?pli=1) wrote a great [blog](https://chiahao-blog.super.site/posts/theory-algorithm-and-code-structure-of-ptychoshelves) that details the algorithms and code structure of PtychoShelves.
 5. We have a weekly study group to discuss novel computational imaging techniques in electron microscopy. Some tutorial lectures can be found [here](https://anl.box.com/s/f7lk410lf62rnia70fztd5l7n567btyv).
