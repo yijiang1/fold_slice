@@ -11,10 +11,11 @@ https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should fo
 2. For ptychography, try the data preparation and reconstruction scripts in /fold_slice/ptycho/examples to get familiar with the data format and reconstruction parameters.
 
 # Resources
-1. A customized [foldsliceGPT](https://chat.openai.com/g/g-YKQKluCy9-foldslicegpt) that serves as an AI expert in X-ray and electron ptychography. It can help users with various tasks such as designing experiments and preparing reconstruction scripts.
-2. The files in /fold_slice/ptycho/notes/ could help you understand the overall code structure. Warning: some notes might be outdated.
-3. [Dr. Chia-Hao Lee](https://sites.google.com/view/chiahao-lee/home?pli=1) wrote a great [blog](https://chiahao-blog.super.site/posts/theory-algorithm-and-code-structure-of-ptychoshelves) that details the algorithms and code structure of PtychoShelves.
-4. We have a weekly study group to discuss novel computational imaging techniques in electron microscopy. Some tutorial lectures can be found [here](https://anl.box.com/s/f7lk410lf62rnia70fztd5l7n567btyv).
+1. A customized [foldsliceGPT](https://chat.openai.com/g/g-YKQKluCy9-foldslicegpt) that serves as an AI assistant in X-ray and electron ptychography. It can help users with various tasks such as designing experiments and preparing reconstruction scripts.
+2. fold_slice can be used in our new LLM-based workflow ([PEAR](https://doi.org/10.1093/mam/ozae044.184)). Feel free to contact me if you want to be a beta tester.
+3. The files in /fold_slice/ptycho/notes/ could help you understand the overall code structure. Warning: some notes might be outdated.
+4. [Dr. Chia-Hao Lee](https://sites.google.com/view/chiahao-lee/home?pli=1) wrote a great [blog](https://chiahao-blog.super.site/posts/theory-algorithm-and-code-structure-of-ptychoshelves) that details the algorithms and code structure of PtychoShelves.
+5. We have a weekly study group to discuss novel computational imaging techniques in electron microscopy. Some tutorial lectures can be found [here](https://anl.box.com/s/f7lk410lf62rnia70fztd5l7n567btyv).
 
 # Major differences from the PtychoShelves package
 1. Some data and reconstruction I/O conventions have been changed to accommodate for electron ptychography. See the example scripts for more details.
