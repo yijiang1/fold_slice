@@ -4,7 +4,7 @@
 % Output:
 %  ++ data_error - averaged data error of last iteration
 
-function [data_error] = ptycho_recon_pear(params, varargin)
+function [data_error, results_path] = ptycho_recon_pear(params, varargin)
     
     parser = inputParser;
 
@@ -24,9 +24,10 @@ function [data_error] = ptycho_recon_pear(params, varargin)
     parser.addParameter('initial_position_file', '', @ischar)
     parser.addParameter('use_grid_scan', false, @islogical)
 
+    parser.addParameter('batch_selection', 'sparse', @ischar)
     parser.addParameter('multislice_ptycho', 0, @islogical)
     parser.addParameter('position_corr', 0, @islogical)
-    parser.addParameter('variable_probe_corr', 0, @islogical)
+    parser.addParameter('variable_probe_corr_modes', 0, @isnumeric)
     parser.addParameter('variable_intensity_corr', 0, @islogical)
     parser.addParameter('multimodal_update', 0, @islogical)
     parser.addParameter('use_momentum', 0, @islogical)
@@ -92,26 +93,35 @@ function [data_error] = ptycho_recon_pear(params, varargin)
             par_recon.scan_type = 'default'; % Type of scan positions
         end
     end
-    
+
+    switch par.batch_selection
+        case 'sparse'
+            par_recon.method = 'MLs';
+        case 'compact'
+            par_recon.method = 'MLc';
+        otherwise
+            error('Invalid batch selection method!')
+    end
+
     if par.position_corr; par_recon.probe_position_search = 0; end
-    if par.variable_probe_corr; par_recon.variable_probe_modes = 1; end
+    if par.variable_probe_corr_modes > 1; par_recon.variable_probe_modes = par.variable_probe_corr_modes; end
     if par.variable_intensity_corr; par_recon.variable_intensity = true; end
     if par.multimodal_update; par_recon.apply_multimodal_update = true; end
-    if par.use_momentum
-        par_recon.method = 'MLc';
-        par_recon.momentum = 0.5;
-    end
+    if par.use_momentum; par_recon.momentum = 0.5; end
     
     par_recon.probe_alpha_max = par.alpha_max;
     par_recon.probe_df = par.defocus;
 
-    par_recon.output_dir_suffix = '_pear';
+    %par_recon.output_dir_suffix = '';
     
     if par.multislice_ptycho
         par_recon.eng_name = 'GPU_MS';
         par_recon.delta_z = par.thickness / par_recon.Nlayers;
+        %par_recon.init_layer_append_mode = 'edge';
     end
     
-    [~, ~, data_error] = ptycho_recon(par_recon);
+    [~, eng, data_error] = ptycho_recon(par_recon);
+    
+    results_path = eng.fout;
     
 end

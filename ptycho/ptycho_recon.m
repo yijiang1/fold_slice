@@ -497,7 +497,7 @@ function [out, eng, data_error] = ptycho_recon(param)
     end
 
     eng. probe_position_error_max = inf; % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
-    eng. apply_relaxed_position_constraint = param_input.apply_geometry_model_constraint; % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
+    eng. apply_relaxed_position_constraint = param_input.apply_geometry_model_constraint; % added by YJ. Apply a relaxed constraint to probe positions. default = false. Set to false if there are big jumps in positions.
     eng. update_pos_weight_every = param_input.update_pos_weight_every; % added by YJ. Allow position weight to be updated multiple times. default = inf: only update once.
 
     % multilayer extension 
